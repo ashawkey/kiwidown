@@ -1,0 +1,247 @@
+/*
+ * Bridges the gap between Typora's app shell and ours.
+ *
+ * Community themes are written against a Typora window: <content> scrolls, #write
+ * sits inside it and centres itself, and html/body carry the page background. This
+ * file recreates just enough of that environment for a theme to behave, and nothing
+ * more — every rule here is either something Typora's own chrome provided, or a
+ * neutralisation of markup Typora doesn't have (Milkdown's wrapper divs).
+ *
+ * Sits in typora-base.compat: above Typora's vendored base.css, below the theme, so
+ * a theme can still override anything here.
+ *
+ * What this file has to get right is whatever the themes actually reach for, which in
+ * practice is #write, .md-diagram, the .cm-* token classes, CodeMirror's own wrappers,
+ * .md-fences and .md-focus — by a wide margin, in that order. `npm run themes:stats`
+ * measures it against whatever is vendored today.
+ */
+
+@layer typora-base.compat {
+  /* Typora's scrolling content area. Themes expect #write's offset parent to be a
+     plain full-height block with no styling of its own, so the theme's own
+     html/body background shows through. */
+  content {
+    display: block;
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background: transparent;
+  }
+
+  /* Milkdown wraps the editor in <div class="milkdown">, which has no Typora
+     counterpart. Make it structurally invisible so #write stays a direct child of
+     the scroll container and theme rules like `#write > p` keep matching. */
+  .milkdown {
+    display: block;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    color: inherit;
+  }
+
+  /*
+   * ProseMirror's own required styles, transcribed from
+   * @milkdown/prose/lib/style/prosemirror.css rather than imported.
+   *
+   * Importing it would inject an *unlayered* stylesheet, and unlayered rules beat every
+   * layered one — so ProseMirror's defaults would silently outrank both Typora's base.css
+   * and the active theme. Inside the layer they behave like every other base rule and a
+   * theme can still override them.
+   *
+   * `.ProseMirror pre { white-space: pre-wrap }` is deliberately omitted; Typora's fences
+   * scroll horizontally instead, which the .md-fences rule below sets up.
+   */
+  .ProseMirror {
+    position: relative;
+    word-wrap: break-word;
+    white-space: pre-wrap;
+    white-space: break-spaces;
+    font-variant-ligatures: none;
+    font-feature-settings: 'liga' 0;
+  }
+
+  .ProseMirror li {
+    position: relative;
+  }
+
+  .ProseMirror-hideselection *::selection {
+    background: transparent;
+  }
+
+  .ProseMirror-hideselection {
+    caret-color: transparent;
+  }
+
+  .ProseMirror [draggable][contenteditable='false'] {
+    user-select: text;
+  }
+
+  .ProseMirror-selectednode {
+    outline: 2px solid #8cf;
+  }
+
+  li.ProseMirror-selectednode {
+    outline: none;
+  }
+
+  li.ProseMirror-selectednode::after {
+    content: '';
+    position: absolute;
+    inset: -2px -2px -2px -32px;
+    border: 2px solid #8cf;
+    pointer-events: none;
+  }
+
+  /* Guard against themes' generic img rules breaking ProseMirror's layout helper. */
+  img.ProseMirror-separator {
+    display: inline !important;
+    border: none !important;
+    margin: 0 !important;
+  }
+
+  /* #write is contenteditable here but a static div in Typora's export; neither
+     should show a focus ring. */
+  #write {
+    box-sizing: border-box;
+    outline: none;
+  }
+
+  #write:focus,
+  #write:focus-visible {
+    outline: none;
+  }
+
+  /* base.css leaves #write at `width: inherit`, relying on Typora's window chrome to
+     size it. Give it the full column and let the theme's own max-width take over. */
+  #write {
+    width: 100%;
+  }
+
+  /*
+   * Markdown syntax markers.
+   *
+   * Typora keeps the punctuation (`**`, `[`, `](`, `==`) in the DOM as .md-meta spans
+   * and link/image targets as .md-content, then hides them until the caret enters the
+   * element, at which point it adds .md-expand. That reveal-on-focus behaviour is what
+   * makes Typora feel like Typora — and it lives in Typora's *app* stylesheet
+   * (base-control.css), not in any theme, so without these rules every document renders
+   * with its raw markup showing.
+   *
+   * Transcribed from base-control.css rather than vendoring that 104 KB file, which is
+   * almost entirely chrome we have no counterpart for (sidebar, quick-open, menus).
+   * Themes still restyle these via --md-char-color / --meta-content-color.
+   *
+   * .md-expand is put on by src/editor/md-meta.ts, which synthesises the markers around
+   * whatever the caret is inside; with the editor unfocused nothing carries it and the
+   * markers stay hidden, which is the correct resting state.
+   */
+  .md-meta {
+    display: none;
+    color: #bbbbbb;
+    color: var(--md-char-color, #bbbbbb);
+  }
+
+  .md-content {
+    display: none;
+    color: #5b808d;
+    color: var(--meta-content-color, #5b808d);
+  }
+
+  .md-meta-none {
+    display: none;
+  }
+
+  .md-empty .md-meta,
+  .md-expand .md-meta,
+  .md-expand .md-content,
+  .md-expand.md-meta,
+  .md-expand.md-content {
+    display: inline;
+    opacity: inherit;
+    width: auto;
+  }
+
+  /* Entities and sub/sup keep their markers in flow but invisible, so line metrics
+     don't shift when they expand. */
+  .md-entity > .md-meta,
+  sub > .md-meta,
+  sup > .md-meta {
+    display: inline-block;
+    width: 0;
+    opacity: 0;
+  }
+
+  /* Typora renders fenced code through CodeMirror 5, so themes style code text via
+     `.cm-s-inner .cm-*` and reach for CodeMirror's own wrappers for layout. We emit a
+     flattened <pre class="md-fences cm-s-inner ...">, so re-point the wrapper rules
+     at the <pre> itself and keep the un-emitted scaffolding out of the layout. */
+  #write .md-fences {
+    position: relative;
+    display: block;
+    white-space: pre;
+    tab-size: 4;
+  }
+
+  /*
+   * In Typora the scroller is CodeMirror's own wrapper *inside* the fence, not the fence
+   * itself. Ours is the <code>, for the same reason: anything absolutely positioned in a
+   * scroll container scrolls away with the content, and the language field has to stay in
+   * the corner however far the code runs.
+   *
+   * The fence itself must not clip, either — themes hang the language field outside it
+   * (notion attaches it under the block as a tab, `top: 100%`), which only works if the
+   * fence is not a scroll container.
+   */
+  #write .md-fences > code {
+    overflow-x: auto;
+  }
+
+  /*
+   * The language field, bottom right.
+   *
+   * Typora positions this from its app code rather than base.css, so themes that style
+   * `.code-tooltip` and `.ty-cm-lang-input` assume it is already placed.
+   * Visible but quiet at rest — it doubles as the label saying what the block is — and
+   * fully legible once the fence is hovered or has the caret.
+   */
+  #write .md-fences > .code-tooltip {
+    position: absolute;
+    right: 0.35em;
+    bottom: 0.15em;
+    z-index: 2;
+    line-height: 1;
+    opacity: 0.4;
+    transition: opacity 120ms ease;
+  }
+
+  #write .md-fences:hover > .code-tooltip,
+  #write .md-fences.md-focus > .code-tooltip,
+  #write .md-fences > .code-tooltip:focus-within {
+    opacity: 1;
+  }
+
+  #write .ty-cm-lang-input {
+    width: 8em;
+    padding: 2px 4px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    background: transparent;
+    color: inherit;
+    font-family: inherit;
+    font-size: 0.75em;
+    line-height: 1.2;
+    text-align: right;
+    opacity: 0.75;
+  }
+
+  #write .ty-cm-lang-input:hover,
+  #write .ty-cm-lang-input:focus {
+    border-color: currentColor;
+    outline: none;
+    opacity: 1;
+  }
+}

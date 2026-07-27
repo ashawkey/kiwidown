@@ -1,0 +1,9 @@
+node_modules/
+dist/
+*.local
+.DS_Store
+.vite/
+
+# Screenshot output — regenerated on demand, and large.
+test/shots/
+test/shots-ui/

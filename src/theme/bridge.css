@@ -1,0 +1,157 @@
+/*
+ * Corrections for the places our DOM differs from Typora's.
+ *
+ * This is the one layer that sits *above* the theme, and the distinction from
+ * compat.css is deliberate:
+ *
+ *   typora-base.compat  recreates what Typora's app provided. A theme is entitled to
+ *                       override any of it, so it sits below the theme.
+ *   typora-bridge       undoes damage caused by elements Typora never emitted. A theme
+ *                       can't be expected to guard against markup it has never seen, so
+ *                       these have to outrank it.
+ *
+ * Keep this file small. Every rule here is a place where the editor's DOM failed to match
+ * doc/dom-contract.md and we compensated in CSS instead — which is a worse fix than
+ * emitting the right DOM, and should be treated as a debt.
+ */
+
+@layer typora-bridge {
+  /*
+   * Milkdown renders fences as `<pre><code>`; Typora renders `<pre class="md-fences">`
+   * with no <code> at all — the code text lives in CodeMirror's own elements.
+   *
+   * So themes style `code` purely as *inline* code, and that lands on the <code> inside
+   * our fence. Notion's `code { background-color; padding }` is the plain case — a tinted,
+   * padded box painted around every single line of every code block. LaTeX's bare
+   * `code { font-family }` is the quiet one: it silently overrides the fence's own font.
+   *
+   * Strip the inline-code decoration back off and let the fence's own styling — which
+   * themes apply to .md-fences — come through untouched.
+   */
+  #write pre.md-fences > code {
+    display: block;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    color: inherit;
+    font: inherit;
+    letter-spacing: inherit;
+    text-shadow: none;
+    white-space: inherit;
+  }
+
+  /* Insurance for the same reason as the rule above: a theme that hangs backticks or
+     quotes off inline code would repeat them on every fence. None in the vendored set
+     currently does, and the rule costs nothing if none ever does. */
+  #write pre.md-fences > code::before,
+  #write pre.md-fences > code::after {
+    content: none;
+  }
+
+  /*
+   * Diagram fences show their rendered output, and reveal the source only while the caret
+   * is inside them — Typora's behaviour, and the reason the source and the panel are
+   * siblings rather than nested.
+   *
+   * In the bridge layer because themes style `.md-diagram-panel` assuming Typora already
+   * decided what is visible; none of them expect to find a raw `<code>` sibling.
+   */
+  #write pre.md-diagram > code {
+    display: none;
+  }
+
+  #write pre.md-diagram.md-focus > code {
+    display: block;
+    margin-bottom: 0.6em;
+    opacity: 0.75;
+  }
+
+  #write pre.md-diagram {
+    white-space: normal;
+  }
+
+  #write .md-diagram-panel {
+    display: block;
+  }
+
+  #write .md-diagram-panel-preview svg {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    margin: 0 auto;
+  }
+
+  /* A diagram that doesn't parse yet — normal while typing, so it reads as a message
+     rather than an error state. */
+  #write .md-diagram-panel-preview.md-diagram-error {
+    white-space: pre-wrap;
+    font-family: var(--monospace, ui-monospace, monospace);
+    font-size: 0.85em;
+    opacity: 0.7;
+  }
+
+  /*
+   * A `$$` block shows its formula and reveals the TeX only while the caret is inside it —
+   * Typora's arrangement, and the same reason the diagram source is a sibling of its
+   * panel rather than inside it.
+   *
+   * In the bridge layer because a theme styling `.md-rawblock-input` assumes Typora already
+   * decided when it exists; in Typora the source is only in the DOM while editing.
+   */
+  #write .md-math-block > .md-rawblock-input,
+  #write .md-math-block > .md-rawblock-before,
+  #write .md-math-block > .md-rawblock-after {
+    display: none;
+  }
+
+  #write .md-math-block.md-focus > .md-rawblock-input,
+  #write .md-math-block.md-focus > .md-rawblock-before,
+  #write .md-math-block.md-focus > .md-rawblock-after {
+    display: block;
+    font-family: var(--monospace, ui-monospace, Menlo, Consolas, monospace);
+    font-size: 0.85em;
+    line-height: 1.5;
+    text-align: left;
+    white-space: pre-wrap;
+  }
+
+  #write .md-math-block.md-focus > .md-rawblock-input {
+    opacity: 0.8;
+    outline: none;
+  }
+
+  #write .md-math-block > .md-rawblock-container {
+    display: block;
+  }
+
+  /* An empty formula — normal right after `$$` — would otherwise be an invisible block
+     with nothing to click back into. */
+  #write .md-math-block > .md-rawblock-container:empty::after {
+    content: '$$';
+    opacity: 0.4;
+    font-family: var(--monospace, ui-monospace, Menlo, Consolas, monospace);
+  }
+
+  /* Inline maths opens for editing when selected: `$`, the TeX, `$`. Monospaced, because
+     what is on show there is source and not the formula. */
+  #write .md-inline-math.md-expand > .md-content {
+    font-family: var(--monospace, ui-monospace, Menlo, Consolas, monospace);
+    font-size: 0.9em;
+    outline: none;
+    white-space: pre-wrap;
+  }
+
+  /*
+   * Typora's footnote body is inline content; Milkdown's schema gives the node `block+`,
+   * so a <p> lands inside `.md-def-content` and breaks the footnote across two lines.
+   * Scoped to footnote bodies, so it cannot affect paragraphs anywhere else.
+   */
+  #write .md-def-footnote > .md-def-content > p {
+    display: inline;
+    margin: 0;
+    padding: 0;
+  }
+}

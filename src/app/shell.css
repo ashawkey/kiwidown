@@ -1,0 +1,638 @@
+/*
+ * Our own chrome. Lives in `@layer app`, declared last, so it beats anything a theme
+ * says regardless of selector specificity — themes routinely style bare `html`, `body`
+ * and `a`, and several ship rules for Typora's sidebar and quick-open panels.
+ *
+ * Everything here is explicit: px units (themes reset `html { font-size }`), an
+ * explicit font stack, explicit colours. Nothing in the chrome inherits from the theme
+ * except the light/dark signal, which is read off [data-theme-dark] on <html>.
+ */
+
+@layer app {
+  :root {
+    --app-bar-h: 52px;
+
+    /*
+     * How wide the rendered document is.
+     *
+     * Themes disagree wildly about this — 752px in Claude, 860px in Notion, 1100px in
+     * LightMind, a full 21cm sheet in LaTeX — so switching theme would otherwise rewrap
+     * every line. The measure is set here instead, above the theme, so the type and colour
+     * change but the column stays put.
+     *
+     * A share of the window rather than a fixed width, because that is what the window
+     * being wide is *for*; but never so narrow that a phone renders a column of two words
+     * per line, which is what a plain 70% would do. --app-doc-measure is the width below
+     * which the document stops shrinking with the window and simply fills it.
+     */
+    --app-doc-width: 70%;
+    --app-doc-measure: 560px;
+
+    --app-fg: #1f2328;
+    --app-fg-dim: #59636e;
+    --app-bg: #ffffff;
+    --app-border: #d1d9e0;
+    --app-hover: #eff2f5;
+
+    /*
+     * Liquid Glass.
+     *
+     * The material is not a colour, it's a stack: a heavily blurred and saturated sample
+     * of whatever is behind, tinted toward the surface colour, with a bright specular edge
+     * along the top and a soft shadow underneath to lift it off the page. Because the
+     * document scrolls *under* the bar, the blur has real content to work with and the
+     * tint shifts as the page moves.
+     */
+    --glass-tint: rgb(255 255 255 / 62%);
+    --glass-edge: rgb(255 255 255 / 70%);
+    --glass-rim: rgb(0 0 0 / 8%);
+    --glass-shadow: 0 10px 30px -14px rgb(0 0 0 / 30%);
+    --glass-blur: saturate(180%) blur(20px);
+
+    /*
+     * On a light page a white-on-white control has no edge at all, so light glass is
+     * tinted *darker* than its surroundings and rimmed with a faint dark hairline. The
+     * white specular highlight then sits on top of that, which is what keeps it reading
+     * as glass rather than as a grey box.
+     */
+    --glass-control: rgb(0 0 0 / 4%);
+    --glass-control-hover: rgb(0 0 0 / 8%);
+    --glass-control-edge: rgb(0 0 0 / 10%);
+    --glass-control-sheen: rgb(255 255 255 / 65%);
+  }
+
+  :root[data-theme-dark='true'] {
+    --app-fg: #e6edf3;
+    --app-fg-dim: #9198a1;
+    --app-bg: #16191d;
+    --app-border: #3d444d;
+    --app-hover: #262c34;
+
+    /* Dark glass is a darker tint with a dimmer highlight — the specular edge is what
+       reads as "glass", so it stays, just quieter. */
+    --glass-tint: rgb(22 25 29 / 58%);
+    --glass-edge: rgb(255 255 255 / 16%);
+    --glass-rim: rgb(0 0 0 / 45%);
+    --glass-shadow: 0 10px 30px -14px rgb(0 0 0 / 60%);
+
+    --glass-control: rgb(255 255 255 / 8%);
+    --glass-control-hover: rgb(255 255 255 / 16%);
+    --glass-control-edge: rgb(255 255 255 / 14%);
+    --glass-control-sheen: rgb(255 255 255 / 12%);
+  }
+
+  html,
+  body {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+  }
+
+  #app {
+    position: relative;
+    height: 100%;
+    min-height: 0;
+  }
+
+  .app-bar {
+    position: absolute;
+    inset: 0 0 auto 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: var(--app-bar-h);
+    padding: 0 14px;
+    box-sizing: border-box;
+    color: var(--app-fg);
+    font: 13px/1.4 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    user-select: none;
+
+    background: var(--glass-tint);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border-bottom: 1px solid var(--glass-rim);
+    /* Inset highlight along the top edge, then depth below. */
+    box-shadow:
+      inset 0 1px 0 var(--glass-edge),
+      var(--glass-shadow);
+  }
+
+  /* Without backdrop-filter the tint alone would be a washed-out translucent band, so
+     fall back to the solid surface colour. */
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .app-bar {
+      background: var(--app-bg);
+      border-bottom: 1px solid var(--app-border);
+    }
+  }
+
+  /*
+   * The brand mark is an emoji, so it is sized and centred deliberately rather than left
+   * to inherit the bar's 13px text metrics — at that size it reads as a stray character
+   * instead of a logo.
+   */
+  .app-bar__title {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    font-size: 19px;
+    line-height: 1;
+    /* Colour emoji ignore `color`, so this only affects any fallback glyph. */
+    user-select: none;
+    cursor: default;
+  }
+
+  .app-bar label {
+    color: var(--app-fg-dim);
+    white-space: nowrap;
+  }
+
+  /* Controls are the same material as the bar, one layer up: lighter tint, brighter edge. */
+  .app-bar select,
+  .app-button {
+    background: var(--glass-control);
+    color: var(--app-fg);
+    border: 1px solid transparent;
+    /* Hairline rim, then a specular highlight across the top edge only. */
+    box-shadow:
+      inset 0 0 0 1px var(--glass-control-edge),
+      inset 0 1px 0 var(--glass-control-sheen);
+    border-radius: 9px;
+    font: inherit;
+    transition:
+      background-color 140ms ease,
+      transform 140ms ease;
+  }
+
+  .app-bar select {
+    /* Sized to its content: a fixed width leaves a short theme name floating next to a
+       far-away chevron. */
+    width: auto;
+    max-width: 220px;
+    padding: 5px 8px;
+    cursor: pointer;
+  }
+
+  /*
+   * The dropdown list is drawn by the browser, not by us, and it does not get the bar's
+   * material: --glass-control is a translucent white, so under a dark theme the popup
+   * composited that 8% fill over the platform's own white list and left the near-white
+   * --app-fg text sitting on near-white.
+   *
+   * `color-scheme` is what tells the browser to draw the popup — and its scrollbar and
+   * selection highlight — in dark chrome. It is set on the control rather than on :root
+   * so it cannot change the page canvas or the document scrollbar, both of which belong
+   * to the theme. It is pinned in *both* directions on purpose: the list should follow
+   * the active theme, not the operating system, so a light theme keeps a light list on a
+   * dark desktop.
+   *
+   * The explicit option colours are for the browsers that paint author styles into the
+   * list rather than deriving it from color-scheme; they have to be opaque, since there
+   * is nothing behind a popup to blend with.
+   */
+  .app-bar select {
+    color-scheme: light;
+  }
+
+  :root[data-theme-dark='true'] .app-bar select {
+    color-scheme: dark;
+  }
+
+  .app-bar select option {
+    background-color: var(--app-bg);
+    color: var(--app-fg);
+  }
+
+  /* The pack names dividing the list — dimmer than the themes under them, as a heading. */
+  .app-bar select optgroup {
+    background-color: var(--app-bg);
+    color: var(--app-fg-dim);
+  }
+
+  .app-bar select:hover,
+  .app-button:hover {
+    background: var(--glass-control-hover);
+  }
+
+  .app-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 5px 10px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  /* Pressing pushes the control into the glass rather than moving it. */
+  .app-button:active {
+    transform: scale(0.94);
+  }
+
+  .app-button:focus-visible,
+  .app-bar select:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 1px;
+  }
+
+  .app-button--icon {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+  }
+
+  .app-icon {
+    display: block;
+    stroke: currentColor;
+  }
+
+  /* Unsaved changes: the save control brightens rather than growing a heavier border. */
+  .app-button.is-emphasis {
+    background: var(--glass-control-hover);
+    box-shadow:
+      inset 0 0 0 1px var(--glass-control-edge),
+      0 0 0 1px currentColor;
+  }
+
+  /* One capsule, so the three document actions read as a single control. */
+  .app-button-group {
+    display: inline-flex;
+    gap: 2px;
+    padding: 2px;
+    border-radius: 11px;
+    background: var(--glass-control);
+    /* Hairline rim, then a specular highlight across the top edge — the same two-layer
+       treatment the individual controls get. */
+    box-shadow:
+      inset 0 0 0 1px var(--glass-control-edge),
+      inset 0 1px 0 var(--glass-control-sheen);
+  }
+
+  .app-button-group .app-button {
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .app-button-group .app-button:hover {
+    background: var(--glass-control-hover);
+  }
+
+  /*
+   * The document tabs.
+   *
+   * The strip takes the slack in the bar, and gives it back by scrolling once there are
+   * more documents than fit. Its scrollbar is hidden: it would sit across the glass, and
+   * the tabs themselves already say there are more of them.
+   */
+  .app-doc-tabs {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+
+  .app-doc-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  /*
+   * Each tab is the same capsule as the button group, so the name reads as one control
+   * with the close button rather than as a label that happens to sit next to one. Only the
+   * active one is lit; the rest stay quiet until pointed at, which is what makes "which
+   * document am I in" answerable at a glance.
+   */
+  .app-doc-tab {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    flex: 0 0 auto;
+    padding: 2px 3px 2px 8px;
+    border-radius: 11px;
+    color: var(--app-fg-dim);
+    transition: background-color 140ms ease;
+  }
+
+  .app-doc-tab:hover {
+    background: var(--glass-control);
+  }
+
+  .app-doc-tab.is-active {
+    color: var(--app-fg);
+    background: var(--glass-control);
+    box-shadow:
+      inset 0 0 0 1px var(--glass-control-edge),
+      inset 0 1px 0 var(--glass-control-sheen);
+  }
+
+  .app-doc-tab.is-active:focus-within {
+    background: var(--glass-control-hover);
+  }
+
+  /* An inactive tab's name is the button that switches to it. */
+  .app-doc-switch {
+    max-width: 160px;
+    padding: 3px 2px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+  }
+
+  /* The active tab shows the name field instead, so the same click renames rather than
+     switching to where you already are. */
+  .app-doc-tab.is-active .app-doc-switch {
+    display: none;
+  }
+
+  .app-doc-switch:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 1px;
+  }
+
+  /* The name field is a text input pretending to be a label until it is clicked. */
+  .app-doc-name {
+    min-width: 48px;
+    max-width: 240px;
+    padding: 3px 2px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-weight: 500;
+    text-overflow: ellipsis;
+    cursor: text;
+  }
+
+  .app-doc-name:hover {
+    background: var(--glass-control-hover);
+  }
+
+  .app-doc-name:focus {
+    background: var(--glass-control-hover);
+    outline: 1px solid currentColor;
+    outline-offset: 0;
+  }
+
+  /* Measured, never seen: the field is sized from this. */
+  .app-doc-mirror {
+    position: absolute;
+    left: 0;
+    top: 0;
+    visibility: hidden;
+    padding: 3px 2px;
+    font: inherit;
+    font-weight: 500;
+    white-space: pre;
+    pointer-events: none;
+  }
+
+  /*
+   * One slot at the end of a tab, holding either the unsaved marker or the close button.
+   *
+   * They never need to be shown at once — an unsaved tab that you are pointing at wants to
+   * offer the close, and a tab you aren't pointing at wants to say whether it's saved — and
+   * giving each its own space would leave a visible stretch of empty capsule on every tab.
+   */
+  .app-doc-mark {
+    position: relative;
+    flex: none;
+    width: 20px;
+    height: 20px;
+  }
+
+  .app-doc-mark > * {
+    position: absolute;
+    inset: 0;
+  }
+
+  /* Unsaved changes, marked the way editors conventionally do. */
+  .app-doc-dot {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    color: var(--app-fg-dim);
+  }
+
+  .app-doc-tab.is-dirty:not(:hover):not(:focus-within) .app-doc-dot {
+    display: flex;
+  }
+
+  .app-button.app-doc-close {
+    width: 20px;
+    height: 20px;
+    border-radius: 7px;
+    background: transparent;
+    box-shadow: none;
+    color: var(--app-fg-dim);
+    /* A row of close buttons is noise: shown on the tab you are in or pointing at, faded
+       out on the rest. Faded rather than hidden, so it keeps its place in the layout and
+       stays a real click target for anything driving the page. */
+    opacity: 0;
+    transition:
+      opacity 120ms ease,
+      background-color 140ms ease;
+  }
+
+  .app-doc-tab:hover .app-doc-close,
+  .app-doc-tab:focus-within .app-doc-close,
+  .app-doc-tab.is-active:not(.is-dirty) .app-doc-close {
+    opacity: 1;
+  }
+
+  .app-button.app-doc-close:hover {
+    background: var(--glass-control-hover);
+    color: var(--app-fg);
+  }
+
+  .app-doc-close .app-icon {
+    width: 13px;
+    height: 13px;
+  }
+
+  .app-stage.is-drop-target::after {
+    content: 'Drop Markdown files to open them';
+    position: absolute;
+    inset: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px dashed var(--app-border);
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--app-bg) 88%, transparent);
+    color: var(--app-fg);
+    font: 500 14px/1 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  .app-toast {
+    position: fixed;
+    left: 50%;
+    bottom: 24px;
+    transform: translateX(-50%);
+    max-width: min(520px, calc(100vw - 32px));
+    padding: 10px 14px;
+    background: var(--app-fg);
+    color: var(--app-bg);
+    border-radius: 8px;
+    box-shadow: 0 6px 24px rgb(0 0 0 / 25%);
+    font: 13px/1.45 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    z-index: 100;
+  }
+
+  .app-toast button {
+    margin-left: 10px;
+    padding: 3px 9px;
+    background: transparent;
+    color: inherit;
+    border: 1px solid currentColor;
+    border-radius: 5px;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  /* Attribution for the active theme — these are other people's stylesheets and the
+     licences require the notice to travel with them. */
+  .app-credit {
+    color: var(--app-fg-dim);
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .app-credit a {
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  /* The stage is the only part of the page the theme owns. It is deliberately
+     unstyled — background, typography and width all come from the theme via
+     html/body and #write. It fills the window and the document scrolls beneath the bar,
+     which is what gives the glass something to refract. */
+  .app-stage {
+    position: absolute;
+    inset: 0;
+    visibility: hidden;
+  }
+
+  :root[data-app-ready='true'] .app-stage {
+    visibility: visible;
+  }
+
+  /*
+   * The document scrolls under the bar, so it needs headroom at the top — as padding on
+   * the scroller rather than a margin on #write, which the theme controls. scroll-padding
+   * keeps anchor jumps (the table of contents) from landing behind the glass.
+   */
+  .app-stage > content {
+    padding-top: var(--app-bar-h);
+    scroll-padding-top: calc(var(--app-bar-h) + 8px);
+    box-sizing: border-box;
+  }
+
+  /*
+   * Give the editable area a floor so a short or empty document is still a large target.
+   * Combined with the click handler in src/editor/click-to-focus.ts, clicking anywhere in
+   * the blank space below the text starts writing there.
+   */
+  .app-stage #write {
+    min-height: calc(100vh - var(--app-bar-h) - 6rem);
+  }
+
+  /*
+   * The reading column, the same under every theme. See --app-doc-width above.
+   *
+   * `max(70%, min(100%, 560px))` reads as: 70% of the window, except where that would be
+   * narrower than 560px, in which case take 560px — or the whole window if even that
+   * doesn't fit. So a desktop gets its 70%, a tablet keeps a full line of prose, and a
+   * phone gets the entire screen with no arithmetic special case in between.
+   *
+   * In `@layer app`, so it outranks the theme's own max-width without needing !important
+   * or a more specific selector. Padding is left to the theme, since that gutter is part
+   * of how a theme looks — except on phones, where several themes' 56–64px would spend a
+   * third of the screen on margins.
+   */
+  .app-stage #write {
+    max-width: max(var(--app-doc-width), min(100%, var(--app-doc-measure)));
+    margin-inline: auto;
+  }
+
+  @media (max-width: 600px) {
+    .app-stage #write {
+      padding-inline: 18px;
+    }
+  }
+
+  /* The chrome gives way to the tabs on a narrow window: the attribution first, then the
+     theme label, then the tab names shorten. */
+  @media (max-width: 900px) {
+    .app-credit {
+      display: none;
+    }
+  }
+
+  @media (max-width: 700px) {
+    .app-bar {
+      gap: 6px;
+      padding: 0 8px;
+    }
+
+    .app-bar label {
+      display: none;
+    }
+
+    /* The theme name is long and the tabs are what the window is for, so the picker gives
+       up its width first — it still reads as a picker, just an abbreviated one. */
+    .app-bar select {
+      max-width: 120px;
+    }
+
+    /* …but not to the point where the tab strip is a few characters wide. */
+    .app-doc-tabs {
+      min-width: 90px;
+    }
+
+    .app-doc-switch,
+    .app-doc-name {
+      max-width: 110px;
+    }
+  }
+
+  /* Phone-sized: the mark is decoration, and the name is in the browser tab anyway. */
+  @media (max-width: 480px) {
+    .app-bar__title {
+      display: none;
+    }
+  }
+
+  .app-error {
+    margin: 0;
+    padding: 16px 20px;
+    background: #ffebe9;
+    border-bottom: 1px solid #ff818266;
+    color: #82071e;
+    font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    white-space: pre-wrap;
+  }
+}

@@ -1,0 +1,114 @@
+{
+  "$comment": [
+    "Typora themes vendored into public/themes/. Run `npm run themes:fetch` to sync.",
+    "",
+    "One 'pack' = one upstream source = one directory under public/themes/<pack.slug>/.",
+    "Source-relative paths are preserved inside that directory, which is what makes the",
+    "themes work untouched: their relative @import and url() references still resolve.",
+    "",
+    "A pack is fetched either from a GitHub repo ('repo' + 'ref') or from a zip ('zip').",
+    "Some themes only ship as archives — here the LaTeX theme, whose repository holds",
+    "SCSS sources and builds CSS only into releases.",
+    "",
+    "'files' entries ending in '*' are globbed. 'skip' drops paths a glob would otherwise",
+    "pull in; @font-face rules pointing at skipped assets are removed automatically, since",
+    "leaving them means a 404 the browser tries to parse as a font.",
+    "",
+    "Every pack carries its own licence file and is credited in the UI. Only packs that",
+    "grant redistribution belong here -- Typora's own themes (typora-default-themes, and",
+    "Academic from typora-theme-gallery) carry no licence at all, which means all rights",
+    "reserved, so they are deliberately not vendored. See THIRD-PARTY.md."
+  ],
+  "packs": [
+    {
+      "slug": "claude",
+      "name": "Claude",
+      "repo": "Tsumugii24/claude-typora-theme",
+      "ref": "main",
+      "license": "MIT",
+      "author": "Tsumugii24",
+      "files": ["claude.css", "claude-dark.css", "claude_fonts/*.ttf", "LICENSE"],
+      "skip": ["claude_fonts/NotoSerifSC-VariableFont_wght.ttf"],
+      "skipReason": "25 MB CJK webfont — too large to vendor; falls back to the next font in the stack.",
+      "themes": [
+        { "slug": "claude", "name": "Claude", "css": "claude.css", "dark": false },
+        { "slug": "claude-dark", "name": "Claude Dark", "css": "claude-dark.css", "dark": true }
+      ]
+    },
+    {
+      "slug": "lightmind",
+      "name": "LightMind",
+      "repo": "SunMoonTrain/LightMindTheme",
+      "ref": "master",
+      "license": "MIT",
+      "author": "SunMoonTrain",
+      "files": ["lightmind.css", "lightmind-dark.css", "LICENSE"],
+      "themes": [
+        { "slug": "lightmind", "name": "LightMind", "css": "lightmind.css", "dark": false },
+        { "slug": "lightmind-dark", "name": "LightMind Dark", "css": "lightmind-dark.css", "dark": true }
+      ]
+    },
+    {
+      "slug": "latex",
+      "name": "LaTeX",
+      "zip": "https://github.com/Keldos-Li/typora-latex-theme/releases/download/v0.3.3/latex-theme-windows.zip",
+      "source": "https://github.com/Keldos-Li/typora-latex-theme",
+      "license": "GPL-3.0",
+      "author": "Keldos-Li",
+      "files": ["target/latex.css", "target/latex-dark.css", "LICENSE", "credits.md"],
+      "themes": [
+        { "slug": "latex", "name": "LaTeX", "css": "target/latex.css", "dark": false },
+        { "slug": "latex-dark", "name": "LaTeX Dark", "css": "target/latex-dark.css", "dark": true }
+      ]
+    },
+    {
+      "slug": "vue",
+      "name": "Vue",
+      "repo": "blinkfox/typora-vue-theme",
+      "ref": "master",
+      "license": "Apache-2.0",
+      "author": "blinkfox",
+      "files": ["vue.css", "vue-dark.css", "vue/fonts.css", "vue/*.woff2", "LICENSE"],
+      "themes": [
+        { "slug": "vue", "name": "Vue", "css": "vue.css", "dark": false },
+        { "slug": "vue-dark", "name": "Vue Dark", "css": "vue-dark.css", "dark": true }
+      ]
+    },
+    {
+      "slug": "notion",
+      "name": "Notion",
+      "repo": "adrian-fuertes/typora-notion-theme",
+      "ref": "main",
+      "license": "MIT",
+      "author": "adrian-fuertes",
+      "files": ["themes/classic/*.css", "themes/enhanced/*.css", "LICENSE"],
+      "themes": [
+        {
+          "slug": "notion-light",
+          "name": "Notion Light",
+          "css": "themes/enhanced/notion-light-enhanced.css",
+          "dark": false
+        },
+        {
+          "slug": "notion-light-classic",
+          "name": "Notion Light Classic",
+          "css": "themes/classic/notion-light-classic.css",
+          "dark": false
+        },
+        { "slug": "notion-dark", "name": "Notion Dark", "css": "themes/enhanced/notion-dark-enhanced.css", "dark": true },
+        {
+          "slug": "notion-darker",
+          "name": "Notion Darker",
+          "css": "themes/enhanced/notion-darker-enhanced.css",
+          "dark": true
+        },
+        {
+          "slug": "notion-dark-classic",
+          "name": "Notion Dark Classic",
+          "css": "themes/classic/notion-dark-classic.css",
+          "dark": true
+        }
+      ]
+    }
+  ]
+}

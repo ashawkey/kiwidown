@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!--
+    The kiwi emoji as the tab icon. Drawn by the platform's own emoji font rather than
+    shipped as paths, so it matches the mark used in the toolbar exactly and stays sharp
+    at every size.
+  -->
+  <text x="50" y="50" font-size="88" text-anchor="middle" dominant-baseline="central">🥝</text>
+</svg>

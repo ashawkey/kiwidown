@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <title>Kiwidown — Markdown with real Typora themes</title>
+
+    <!--
+      Cascade layer order is declared before anything else loads, so it holds no
+      matter what order stylesheets arrive in:
+        typora-base   — Typora's own base.css/codemirror.css, then our compat shims
+                        (below the theme: a theme is entitled to override any of it)
+        typora-theme  — the active community theme (swapped at runtime)
+        typora-bridge — corrections for places our DOM differs from Typora's. Above the
+                        theme on purpose: a theme can't be expected to guard against
+                        elements Typora never emitted. See src/theme/bridge.css.
+        app           — our own chrome; declared last, so it always wins
+      Sub-layers pin compat above vendor without depending on <style>/<link> order,
+      which Vite controls differently in dev and prod.
+    -->
+    <style id="layer-order">
+      @layer typora-base, typora-theme, typora-bridge, app;
+      @layer typora-base.vendor, typora-base.compat;
+    </style>
+
+    <!--
+      Both slots are filled at runtime by src/theme/index.ts with
+      `@import url(...) layer(...)` rules:
+        typora-base-slot  — Typora's real base.css + codemirror.css, vendored into
+                            public/ by `npm run base:fetch`
+        typora-theme-slot — the active community theme
+      They are injected rather than written inline because Vite resolves @import in
+      index.html through PostCSS at build time, which would try to bundle files that
+      are meant to stay unprocessed in public/. Injecting also keeps every stylesheet
+      path document-relative, so the site works at any deploy path.
+    -->
+    <style id="typora-base-slot"></style>
+    <style id="typora-theme-slot"></style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

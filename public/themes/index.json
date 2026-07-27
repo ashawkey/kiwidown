@@ -1,0 +1,157 @@
+{
+  "generated": "2026-07-28T00:00:12.240Z",
+  "packs": {
+    "claude": {
+      "fingerprint": "33c7d8fc564a1b64",
+      "files": 6
+    },
+    "lightmind": {
+      "fingerprint": "669119d251716138",
+      "files": 3
+    },
+    "latex": {
+      "fingerprint": "bf729ca40180517f",
+      "files": 4
+    },
+    "vue": {
+      "fingerprint": "2e3704de6d9fd360",
+      "files": 32
+    },
+    "notion": {
+      "fingerprint": "7a05eee767e7ac98",
+      "files": 7
+    }
+  },
+  "themes": [
+    {
+      "id": "claude/claude",
+      "name": "Claude",
+      "pack": "Claude",
+      "dark": false,
+      "href": "claude/claude.css",
+      "license": "MIT",
+      "author": "Tsumugii24",
+      "source": "https://github.com/Tsumugii24/claude-typora-theme"
+    },
+    {
+      "id": "claude/claude-dark",
+      "name": "Claude Dark",
+      "pack": "Claude",
+      "dark": true,
+      "href": "claude/claude-dark.css",
+      "license": "MIT",
+      "author": "Tsumugii24",
+      "source": "https://github.com/Tsumugii24/claude-typora-theme"
+    },
+    {
+      "id": "latex/latex",
+      "name": "LaTeX",
+      "pack": "LaTeX",
+      "dark": false,
+      "href": "latex/target/latex.css",
+      "license": "GPL-3.0",
+      "author": "Keldos-Li",
+      "source": "https://github.com/Keldos-Li/typora-latex-theme"
+    },
+    {
+      "id": "latex/latex-dark",
+      "name": "LaTeX Dark",
+      "pack": "LaTeX",
+      "dark": true,
+      "href": "latex/target/latex-dark.css",
+      "license": "GPL-3.0",
+      "author": "Keldos-Li",
+      "source": "https://github.com/Keldos-Li/typora-latex-theme"
+    },
+    {
+      "id": "lightmind/lightmind",
+      "name": "LightMind",
+      "pack": "LightMind",
+      "dark": false,
+      "href": "lightmind/lightmind.css",
+      "license": "MIT",
+      "author": "SunMoonTrain",
+      "source": "https://github.com/SunMoonTrain/LightMindTheme"
+    },
+    {
+      "id": "lightmind/lightmind-dark",
+      "name": "LightMind Dark",
+      "pack": "LightMind",
+      "dark": true,
+      "href": "lightmind/lightmind-dark.css",
+      "license": "MIT",
+      "author": "SunMoonTrain",
+      "source": "https://github.com/SunMoonTrain/LightMindTheme"
+    },
+    {
+      "id": "notion/notion-dark",
+      "name": "Notion Dark",
+      "pack": "Notion",
+      "dark": true,
+      "href": "notion/themes/enhanced/notion-dark-enhanced.css",
+      "license": "MIT",
+      "author": "adrian-fuertes",
+      "source": "https://github.com/adrian-fuertes/typora-notion-theme"
+    },
+    {
+      "id": "notion/notion-dark-classic",
+      "name": "Notion Dark Classic",
+      "pack": "Notion",
+      "dark": true,
+      "href": "notion/themes/classic/notion-dark-classic.css",
+      "license": "MIT",
+      "author": "adrian-fuertes",
+      "source": "https://github.com/adrian-fuertes/typora-notion-theme"
+    },
+    {
+      "id": "notion/notion-darker",
+      "name": "Notion Darker",
+      "pack": "Notion",
+      "dark": true,
+      "href": "notion/themes/enhanced/notion-darker-enhanced.css",
+      "license": "MIT",
+      "author": "adrian-fuertes",
+      "source": "https://github.com/adrian-fuertes/typora-notion-theme"
+    },
+    {
+      "id": "notion/notion-light",
+      "name": "Notion Light",
+      "pack": "Notion",
+      "dark": false,
+      "href": "notion/themes/enhanced/notion-light-enhanced.css",
+      "license": "MIT",
+      "author": "adrian-fuertes",
+      "source": "https://github.com/adrian-fuertes/typora-notion-theme"
+    },
+    {
+      "id": "notion/notion-light-classic",
+      "name": "Notion Light Classic",
+      "pack": "Notion",
+      "dark": false,
+      "href": "notion/themes/classic/notion-light-classic.css",
+      "license": "MIT",
+      "author": "adrian-fuertes",
+      "source": "https://github.com/adrian-fuertes/typora-notion-theme"
+    },
+    {
+      "id": "vue/vue",
+      "name": "Vue",
+      "pack": "Vue",
+      "dark": false,
+      "href": "vue/vue.css",
+      "license": "Apache-2.0",
+      "author": "blinkfox",
+      "source": "https://github.com/blinkfox/typora-vue-theme"
+    },
+    {
+      "id": "vue/vue-dark",
+      "name": "Vue Dark",
+      "pack": "Vue",
+      "dark": true,
+      "href": "vue/vue-dark.css",
+      "license": "Apache-2.0",
+      "author": "blinkfox",
+      "source": "https://github.com/blinkfox/typora-vue-theme"
+    }
+  ]
+}
