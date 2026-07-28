@@ -2,6 +2,8 @@
 
 A static, browser-based WYSIWYG Markdown editor that renders with **real Typora themes** — the ones the community has already written, used unmodified.
 
+**Live demo:** [md.kiui.moe](https://md.kiui.moe)
+
 ## Features
 
 | | |
