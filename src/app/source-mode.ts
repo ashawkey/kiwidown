@@ -1,20 +1,25 @@
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands'
-import {
-  defineLanguageFacet,
-  HighlightStyle,
-  Language,
-  syntaxHighlighting,
-  syntaxTree,
-} from '@codemirror/language'
+import { HighlightStyle, syntaxHighlighting } from '@codemirror/language'
 import { EditorState } from '@codemirror/state'
 import { EditorView, keymap } from '@codemirror/view'
 import { tags } from '@lezer/highlight'
-import { Emoji, GFM, parser, Subscript, Superscript } from '@lezer/markdown'
 import { Selection as ProseSelection } from '@milkdown/kit/prose/state'
+import type { Node as ProseNode } from '@milkdown/kit/prose/model'
 
 import type { DocumentState } from '../doc'
 import type { DocumentViews } from '../doc/views'
 import type { EditorHandle } from '../editor'
+import {
+  alignBlocks,
+  renderedInnerOffset,
+  renderedTextOffset,
+  sourceBlocks,
+  sourceKind,
+  sourceMarkdown,
+  sourceOffsetAt,
+  textOffsetAt,
+  visibleMap,
+} from './source-map'
 
 interface SourceViewState {
   state: EditorState
@@ -22,10 +27,28 @@ interface SourceViewState {
   scrollLeft: number
 }
 
-interface LogicalPosition {
+/**
+ * A caret in the rendered document, expressed so the source view can find the same spot.
+ *
+ * `textOffset` counts rendered characters within the block, which is the unit both sides
+ * share. `kinds` is the block sequence it was measured against, so the pairing is done
+ * against the document as it stood when the caret was read. `ratio` is only a fallback for
+ * a block that pairs with nothing at all.
+ */
+interface RenderedAnchor {
   blockIndex: number
+  textOffset: number
   ratio: number
-  codeOffset?: number
+  kinds: string[]
+  viewportY: number
+}
+
+/** The same, in the other direction: `blockIndex` indexes the source blocks. */
+interface SourceAnchor {
+  blockIndex: number
+  textOffset: number
+  ratio: number
+  kinds: string[]
   viewportY: number
 }
 
@@ -47,13 +70,6 @@ export interface SourceModeOptions {
   onEdit: () => void
   onModeChange: () => void
 }
-
-const sourceMarkdown = new Language(
-  defineLanguageFacet(),
-  parser.configure([GFM, Subscript, Superscript, Emoji]),
-  [],
-  'markdown'
-)
 
 /* CodeMirror-compatible names let the active Typora theme colour Markdown source too. */
 const sourceHighlight = HighlightStyle.define([
@@ -154,82 +170,96 @@ export function createSourceMode(options: SourceModeOptions): SourceMode {
     return sourceView.state.doc.toString()
   }
 
-  function sourceBlocks(state = sourceView.state): Array<ReturnType<typeof syntaxTree>['topNode']> {
-    const blocks: Array<ReturnType<typeof syntaxTree>['topNode']> = []
-    for (let node = syntaxTree(state).topNode.firstChild; node; node = node.nextSibling) {
-      blocks.push(node)
-    }
-    return blocks
+  function renderedKinds(doc: ProseNode): string[] {
+    const kinds: string[] = []
+    for (let i = 0; i < doc.childCount; i += 1) kinds.push(doc.child(i).type.name)
+    return kinds
   }
 
-  function renderedPosition(): LogicalPosition {
-    let position: LogicalPosition = { blockIndex: 0, ratio: 0, viewportY: options.stage.offsetTop }
+  function renderedPosition(): RenderedAnchor {
+    let anchor: RenderedAnchor = {
+      blockIndex: 0,
+      textOffset: 0,
+      ratio: 0,
+      kinds: [],
+      viewportY: options.stage.offsetTop,
+    }
     options.editor.withView((view) => {
       const { doc, selection } = view.state
-      const blockIndex = Math.min(selection.$head.index(0), Math.max(0, doc.childCount - 1))
+      if (!doc.childCount) return
+      const blockIndex = Math.min(selection.$head.index(0), doc.childCount - 1)
       let blockStart = 0
       for (let i = 0; i < blockIndex; i += 1) blockStart += doc.child(i).nodeSize
       const block = doc.child(blockIndex)
-      const innerOffset = Math.max(0, selection.head - blockStart - 1)
-      position = {
+      const innerOffset = Math.max(0, Math.min(selection.head - blockStart - 1, block.content.size))
+      anchor = {
         blockIndex,
-        ratio: block.content.size ? Math.min(1, innerOffset / block.content.size) : 0,
-        codeOffset: block.type.name === 'code_block' ? innerOffset : undefined,
+        textOffset: renderedTextOffset(block, innerOffset),
+        ratio: block.content.size ? innerOffset / block.content.size : 0,
+        kinds: renderedKinds(doc),
         viewportY: view.coordsAtPos(selection.head).top,
       }
     })
-    return position
+    return anchor
   }
 
-  function sourceOffset(position: LogicalPosition, state: EditorState): number {
-    const blocks = sourceBlocks(state)
-    const block = blocks[Math.min(position.blockIndex, Math.max(0, blocks.length - 1))]
-    if (!block) return Math.round(position.ratio * state.doc.length)
+  function sourceOffset(anchor: RenderedAnchor, state: EditorState): number {
+    const text = state.doc.toString()
+    const blocks = sourceBlocks(state, text)
+    if (!blocks.length) return 0
 
-    if (position.codeOffset != null && block.name === 'FencedCode') {
-      const contentStart = state.doc.toString().indexOf('\n', block.from) + 1
-      if (contentStart > 0) return Math.min(block.to, contentStart + position.codeOffset)
-    }
-    return Math.round(block.from + position.ratio * (block.to - block.from))
+    const pairs = alignBlocks(
+      anchor.kinds,
+      blocks.map((entry) => sourceKind(entry.name))
+    )
+    const paired = pairs[anchor.blockIndex]
+    const block = blocks[paired ?? Math.min(anchor.blockIndex, blocks.length - 1)]
+    if (!block) return 0
+    if (paired == null) return Math.round(block.from + anchor.ratio * (block.to - block.from))
+    return sourceOffsetAt(visibleMap(block, text), anchor.textOffset)
   }
 
-  function sourcePosition(): LogicalPosition {
-    const head = sourceView.state.selection.main.head
-    const blocks = sourceBlocks()
+  function sourceAnchor(): SourceAnchor {
+    const state = sourceView.state
+    const text = state.doc.toString()
+    const head = state.selection.main.head
+    const blocks = sourceBlocks(state, text)
+
     let blockIndex = blocks.findIndex((block) => block.from <= head && head <= block.to)
     if (blockIndex < 0) {
       blockIndex = blocks.findIndex((block) => block.from > head)
       if (blockIndex < 0) blockIndex = Math.max(0, blocks.length - 1)
     }
     const block = blocks[blockIndex]
-    const length = block ? block.to - block.from : sourceView.state.doc.length
-    const ratio = block && length ? Math.max(0, Math.min(1, (head - block.from) / length)) : 0
-    let codeOffset: number | undefined
-    if (block?.name === 'FencedCode') {
-      const contentStart = markdownText().indexOf('\n', block.from) + 1
-      if (contentStart > 0) codeOffset = Math.max(0, head - contentStart)
-    }
+    const length = block ? block.to - block.from : text.length
     return {
       blockIndex,
-      ratio,
-      codeOffset,
+      textOffset: block ? textOffsetAt(visibleMap(block, text), head) : 0,
+      ratio: block && length ? Math.max(0, Math.min(1, (head - block.from) / length)) : 0,
+      kinds: blocks.map((entry) => sourceKind(entry.name)),
       viewportY: sourceView.coordsAtPos(head)?.top ?? options.stage.offsetTop,
     }
   }
 
-  function revealRendered(position: LogicalPosition): void {
+  function revealRendered(anchor: SourceAnchor): void {
     const id = options.activeId()
     options.editor.withView((view) => {
-      const blockIndex = Math.min(position.blockIndex, Math.max(0, view.state.doc.childCount - 1))
+      const { doc } = view.state
+      if (!doc.childCount) return
+
+      const pairs = alignBlocks(renderedKinds(doc), anchor.kinds)
+      const paired = pairs.findIndex((sourceIndex) => sourceIndex === anchor.blockIndex)
+      const blockIndex = paired >= 0 ? paired : Math.min(anchor.blockIndex, doc.childCount - 1)
+
       let blockStart = 0
-      for (let i = 0; i < blockIndex; i += 1) blockStart += view.state.doc.child(i).nodeSize
-      const block = view.state.doc.child(blockIndex)
+      for (let i = 0; i < blockIndex; i += 1) blockStart += doc.child(i).nodeSize
+      const block = doc.child(blockIndex)
       const innerOffset =
-        position.codeOffset != null && block.type.name === 'code_block'
-          ? Math.min(position.codeOffset, block.content.size)
-          : Math.round(position.ratio * block.content.size)
-      const target = Math.min(view.state.doc.content.size, blockStart + 1 + innerOffset)
-      view.dispatch(view.state.tr.setSelection(ProseSelection.near(view.state.doc.resolve(target))))
+        paired >= 0
+          ? renderedInnerOffset(block, anchor.textOffset)
+          : Math.round(anchor.ratio * block.content.size)
+      const target = Math.min(doc.content.size, blockStart + 1 + innerOffset)
+      view.dispatch(view.state.tr.setSelection(ProseSelection.near(doc.resolve(target))))
       view.focus()
     })
 
@@ -237,7 +267,7 @@ export function createSourceMode(options: SourceModeOptions): SourceMode {
       if (source || options.activeId() !== id) return
       options.editor.withView((view) => {
         const top = view.coordsAtPos(view.state.selection.head).top
-        options.content.scrollTop += top - position.viewportY
+        options.content.scrollTop += top - anchor.viewportY
       })
     })
   }
@@ -250,12 +280,7 @@ export function createSourceMode(options: SourceModeOptions): SourceMode {
     })
   }
 
-  function show(
-    markdown: string,
-    id: string,
-    restoreKept = false,
-    position?: LogicalPosition
-  ): void {
+  function show(markdown: string, id: string, restoreKept = false, anchor?: RenderedAnchor): void {
     shownId = id
     const kept = retained.get(id)
     const state =
@@ -266,8 +291,8 @@ export function createSourceMode(options: SourceModeOptions): SourceMode {
 
     internalChange = true
     sourceView.setState(state)
-    if (position) {
-      sourceView.dispatch({ selection: { anchor: sourceOffset(position, state) } })
+    if (anchor) {
+      sourceView.dispatch({ selection: { anchor: sourceOffset(anchor, state) } })
     }
     internalChange = false
 
@@ -275,9 +300,9 @@ export function createSourceMode(options: SourceModeOptions): SourceMode {
     restoreFrame = requestAnimationFrame(() => {
       restoreFrame = 0
       if (shownId !== id) return
-      if (position) {
+      if (anchor) {
         const top = sourceView.coordsAtPos(sourceView.state.selection.main.head)?.top
-        if (top != null) sourceView.scrollDOM.scrollTop += top - position.viewportY
+        if (top != null) sourceView.scrollDOM.scrollTop += top - anchor.viewportY
       } else {
         sourceView.scrollDOM.scrollTop = kept?.scrollTop ?? 0
         sourceView.scrollDOM.scrollLeft = kept?.scrollLeft ?? 0
@@ -332,17 +357,17 @@ export function createSourceMode(options: SourceModeOptions): SourceMode {
     toggle() {
       if (!source) {
         const id = options.activeId()
-        const position = renderedPosition()
+        const anchor = renderedPosition()
         renderedMarkdown = options.editor.getMarkdown()
         const restoreKept = renderedBaselines.get(id) === renderedMarkdown
-        show(renderedMarkdown, id, restoreKept, position)
+        show(renderedMarkdown, id, restoreKept, anchor)
         source = true
         options.content.hidden = true
         root.hidden = false
         sourceView.requestMeasure()
         sourceView.focus()
       } else {
-        const position = sourcePosition()
+        const anchor = sourceAnchor()
         capture(options.activeId())
         const markdown = markdownText()
         source = false
@@ -351,7 +376,7 @@ export function createSourceMode(options: SourceModeOptions): SourceMode {
         if (markdown !== sourceAtOpen) options.editor.setMarkdown(markdown)
         renderedMarkdown = options.editor.getMarkdown()
         renderedBaselines.set(options.activeId(), renderedMarkdown)
-        revealRendered(position)
+        revealRendered(anchor)
         // Parsing source may normalise it, so update dirty state against the text that the
         // rendered editor will actually save.
         options.onEdit()
