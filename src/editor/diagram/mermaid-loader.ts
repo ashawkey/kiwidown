@@ -36,13 +36,19 @@ export type DiagramResult = { ok: true; svg: string } | { ok: false; message: st
  * so failures come back as a value rather than an exception, and the caller shows the
  * message instead of a blank or stale panel.
  */
-export async function renderDiagram(id: string, source: string): Promise<DiagramResult> {
+export async function renderDiagram(
+  id: string,
+  source: string,
+  container: Element
+): Promise<DiagramResult> {
   try {
     const mermaid = await load()
     // `parse` validates without leaving Mermaid's error DOM attached to the body, which
-    // `render` does on failure.
+    // `render` does on failure. Rendering in the eventual preview container is important:
+    // Mermaid measures labels while drawing, and a body-level temporary SVG would use the
+    // body font instead of the fence/panel font that the finished SVG inherits.
     await mermaid.parse(source)
-    const { svg } = await mermaid.render(id, source)
+    const { svg } = await mermaid.render(id, source, container)
     return { ok: true, svg }
   } catch (error) {
     return { ok: false, message: error instanceof Error ? error.message : String(error) }

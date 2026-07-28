@@ -45,6 +45,9 @@ function checkboxWidget(pos: number, checked: boolean): Decoration {
       const input = document.createElement('input')
       input.type = 'checkbox'
       input.checked = checked
+      // Typora exposes the state both as the live :checked property and as a boolean
+      // attribute. Themes use both forms (LightMind uses :checked; Notion uses [checked]).
+      input.toggleAttribute('checked', checked)
       input.addEventListener('mousedown', (event) => event.preventDefault())
       input.addEventListener('click', (event) => {
         event.preventDefault()

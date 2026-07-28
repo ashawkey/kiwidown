@@ -468,6 +468,32 @@
     height: 13px;
   }
 
+  /* Source mode is a real CodeMirror editing surface. Keeping highlighting, selection and
+     input in one layout tree avoids the unavoidable drift of textarea/pre overlays. */
+  .app-source {
+    --app-source-padding: 32px;
+
+    position: absolute;
+    inset: 0;
+    padding-top: var(--app-bar-h);
+    box-sizing: border-box;
+    color: var(--app-fg);
+    background: var(--app-bg);
+  }
+
+  .app-source__surface {
+    position: relative;
+    width: max(var(--app-doc-width), min(100%, var(--app-doc-measure)));
+    height: 100%;
+    margin-inline: auto;
+  }
+
+  @media (max-width: 600px) {
+    .app-source {
+      --app-source-padding: 32px 18px;
+    }
+  }
+
   .app-stage.is-drop-target::after {
     content: 'Drop Markdown files to open them';
     position: absolute;
@@ -549,6 +575,12 @@
     padding-top: var(--app-bar-h);
     scroll-padding-top: calc(var(--app-bar-h) + 8px);
     box-sizing: border-box;
+  }
+
+  /* compat.css gives <content> display:block, which otherwise overrides the browser's
+     hidden rule and lets positioned WYSIWYG controls leak above source mode. */
+  .app-stage > content[hidden] {
+    display: none;
   }
 
   /*

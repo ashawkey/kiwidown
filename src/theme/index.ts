@@ -20,8 +20,10 @@ interface ThemeIndex {
 }
 
 const STORAGE_KEY = 'kiwidown.theme'
+/** Generated views whose geometry depends on theme fonts listen for this. */
+export const THEME_CHANGE_EVENT = 'kiwidown:themechange'
 /** A clean, familiar light document. Falls back to whatever is first if it's ever dropped. */
-const DEFAULT_THEME = 'notion/notion-light'
+const DEFAULT_THEME = 'lightmind/lightmind'
 
 /** Resolve a path in public/ against the document base, so any deploy path works. */
 function publicUrl(path: string): string {
@@ -94,6 +96,7 @@ export async function applyTheme(id: string): Promise<ThemeEntry> {
   // [data-theme] to label what they just captured.
   document.documentElement.dataset['theme'] = theme.id
   document.documentElement.dataset['themeDark'] = String(theme.dark)
+  window.dispatchEvent(new Event(THEME_CHANGE_EVENT))
   try {
     localStorage.setItem(STORAGE_KEY, theme.id)
   } catch {

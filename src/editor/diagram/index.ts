@@ -1,6 +1,8 @@
 import type { Node } from '@milkdown/kit/prose/model'
+import { TextSelection } from '@milkdown/kit/prose/state'
 import type { EditorView, NodeView } from '@milkdown/kit/prose/view'
 
+import { THEME_CHANGE_EVENT } from '../../theme'
 import { createLanguageChip, type LanguageChip } from '../code-fence/language-chip'
 import { FENCE_CLASS } from '../typora-dom'
 import { renderDiagram } from './mermaid-loader'
@@ -46,6 +48,12 @@ export class DiagramView implements NodeView {
   #source: string
   #timer: number | undefined
   #id = `omr-diagram-${++counter}`
+  #refreshForTheme = (): void => {
+    this.#schedule()
+    // The imported stylesheet can register webfonts after the theme event. A second pass
+    // once those fonts settle keeps Mermaid's measured label boxes in sync with the text.
+    void document.fonts.ready.then(() => this.#schedule(0))
+  }
 
   constructor(node: Node, view: EditorView, getPos: () => number | undefined) {
     this.#source = node.textContent
@@ -66,6 +74,17 @@ export class DiagramView implements NodeView {
     this.#preview.className = 'md-diagram-panel-preview'
     this.#panel.appendChild(this.#preview)
 
+    // The source is hidden until the block has focus, so clicking generated SVG text
+    // cannot place a ProseMirror caret in it. Open the source explicitly at its end.
+    this.#preview.addEventListener('mousedown', (event) => {
+      event.preventDefault()
+      const pos = getPos()
+      if (pos == null) return
+      const size = view.state.doc.nodeAt(pos)?.content.size ?? 0
+      view.dispatch(view.state.tr.setSelection(TextSelection.create(view.state.doc, pos + 1 + size)))
+      view.focus()
+    })
+
     // Without this a diagram would be a one-way door: nothing else in the block says
     // `mermaid`, so there would be no way back to an ordinary fence.
     this.#chip = createLanguageChip({
@@ -79,6 +98,7 @@ export class DiagramView implements NodeView {
     })
 
     this.dom.append(this.contentDOM, this.#panel, this.#chip.element)
+    window.addEventListener(THEME_CHANGE_EVENT, this.#refreshForTheme)
     this.#schedule(0)
   }
 
@@ -93,7 +113,7 @@ export class DiagramView implements NodeView {
       this.#preview.replaceChildren()
       return
     }
-    const result = await renderDiagram(this.#id, source)
+    const result = await renderDiagram(this.#id, source, this.#preview)
     // Another edit landed while Mermaid was working; that render already superseded this.
     if (source !== this.#source.trim()) return
 
@@ -130,10 +150,14 @@ export class DiagramView implements NodeView {
   }
 
   stopEvent(event: Event): boolean {
-    return event.target instanceof globalThis.Node && this.#chip.contains(event.target)
+    return (
+      event.target instanceof globalThis.Node &&
+      (this.#panel.contains(event.target) || this.#chip.contains(event.target))
+    )
   }
 
   destroy(): void {
     window.clearTimeout(this.#timer)
+    window.removeEventListener(THEME_CHANGE_EVENT, this.#refreshForTheme)
   }
 }

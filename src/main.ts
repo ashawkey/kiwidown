@@ -1,5 +1,6 @@
 import './app/shell.css'
 import { bindDocumentShortcuts, bindFileDrop, bindUnloadGuard, createDocumentBar } from './app/document-bar'
+import { createSourceMode, type SourceMode } from './app/source-mode'
 import { createThemePicker } from './app/theme-picker'
 import { askToast, reportError } from './app/toast'
 import { DocumentStore } from './doc'
@@ -58,34 +59,53 @@ async function main(): Promise<void> {
   // when it changed — so the store is created first with a placeholder, then bound.
   let getMarkdown: () => string = () => initial
   let views: DocumentViews | undefined
+  let viewMode: SourceMode | undefined
+  const modeControl = {
+    isSource: () => viewMode?.isSource ?? false,
+    toggle: () => viewMode?.toggle(),
+  }
 
   const store = new DocumentStore(
     {
       read: () => getMarkdown(),
-      write: (markdown) => views?.replace(markdown),
-      swap: (next, previous) => views?.swap(next, previous),
-      forget: (id) => views?.forget(id),
+      write: (markdown) => (viewMode ? viewMode.replace(markdown) : views?.replace(markdown)),
+      swap: (next, previous) =>
+        viewMode ? viewMode.swap(next, previous) : views?.swap(next, previous),
+      forget: (id) => (viewMode ? viewMode.forget(id) : views?.forget(id)),
       onChange: () => documentBar.render(),
       onError: reportError,
     },
     initial
   )
 
-  const documentBar = createDocumentBar(store)
+  const documentBar = createDocumentBar(store, modeControl)
   bar.append(title, documentBar.element, picker.element)
 
   const editor = await createEditor({
     root: content,
     defaultValue: initial,
-    onChange: () => store.noteEdit(),
+    // Hidden ProseMirror updates keep tab state aligned while source mode is active; the
+    // textarea itself is the authoritative change source in that mode.
+    onChange: () => {
+      if (!viewMode?.isSource) store.noteEdit()
+    },
   })
-  getMarkdown = editor.getMarkdown
   // Everything above only ever runs before the first user action, so nothing has asked to
-  // switch or replace a document yet; from here on both go through the editor.
+  // switch or replace a document yet; from here on both go through the active editor mode.
   views = createDocumentViews(editor, content)
+  viewMode = createSourceMode({
+    stage,
+    content,
+    editor,
+    views,
+    activeId: () => store.activeId,
+    onEdit: () => store.noteEdit(),
+    onModeChange: () => documentBar.render(),
+  })
+  getMarkdown = viewMode.getMarkdown
   store.ready()
 
-  bindDocumentShortcuts(store)
+  bindDocumentShortcuts(store, modeControl)
   bindUnloadGuard(store)
   bindFileDrop(store, stage)
 
@@ -121,8 +141,8 @@ async function main(): Promise<void> {
   // clicks landing on the right eight-pixel token span.
   Object.defineProperty(window, '__kiwidown', {
     value: {
-      getMarkdown: editor.getMarkdown,
-      setMarkdown: editor.setMarkdown,
+      getMarkdown: viewMode.getMarkdown,
+      setMarkdown: viewMode.replace,
       withView: editor.withView,
       source: initial,
       store,

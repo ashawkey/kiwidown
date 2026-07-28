@@ -1,11 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 100 100">
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="-8 -8 116 116">
   <!--
     The mark as a document image, for src/welcome/welcome.md.
 
     Separate from favicon.svg, which is deliberately unsized so the browser can rasterise
     it at whatever the tab needs. This one carries intrinsic width and height because
     Markdown has no way to express a size: an SVG without them fills its container, which
-    in a document means a 96-pixel kiwi rendered the full width of the page.
+    in a document means a 96-pixel kiwi rendered the full width of the page. The padded
+    viewBox accommodates platform emoji fonts whose painted glyph extends past its nominal
+    text metrics.
   -->
   <text x="50" y="50" font-size="88" text-anchor="middle" dominant-baseline="central">🥝</text>
 </svg>

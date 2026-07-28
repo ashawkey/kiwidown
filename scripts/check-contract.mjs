@@ -77,7 +77,12 @@ const CHECKS = [
     min: 2,
     why: 'base.css positions it with `.md-task-list-item > input`',
   },
-  { what: 'checked box reflects state', selector: '#write li.task-list-done > input:checked' },
+  { what: 'checked box reflects live state', selector: '#write li.task-list-done > input:checked' },
+  {
+    what: 'checked box reflects attribute state',
+    selector: '#write li.task-list-done > input[checked]',
+    why: 'themes use both `:checked` (LightMind) and `[checked]` (Notion)',
+  },
   { what: 'footnote reference', selector: '#write sup.md-footnote' },
   {
     what: 'footnote definition',
@@ -434,6 +439,59 @@ async function run(browser) {
   console.log(`  ${mermaidOk ? 'PASS' : 'FAIL'}  ${'mermaid fence renders a diagram'.padEnd(38)}`)
   if (!mermaidOk) console.log(`        -> ${JSON.stringify(mermaidResult)}`)
 
+  // Clicking generated SVG content must put the caret back in the hidden code content.
+  await page.click('#write pre.md-diagram .md-diagram-panel-preview')
+  const diagramEdit = await settled(page, () => {
+    let inSource = false
+    window.__kiwidown.withView((view) => {
+      inSource = view.state.selection.$head.parent.type.name === 'code_block'
+    })
+    const fence = document.querySelector('#write pre.md-diagram')
+    const code = fence?.querySelector(':scope > code')
+    return {
+      focused: fence?.classList.contains('md-focus') ?? false,
+      sourceVisible: Boolean(code) && getComputedStyle(code).display !== 'none',
+      inSource,
+    }
+  })
+  const diagramEditOk = Object.values(diagramEdit).every(Boolean)
+  tally(diagramEditOk)
+  console.log(`  ${diagramEditOk ? 'PASS' : 'FAIL'}  ${'diagram preview opens its source'.padEnd(38)}`)
+  if (!diagramEditOk) console.log(`        -> ${JSON.stringify(diagramEdit)}`)
+
+  // Mermaid measures labels while rendering. Changing to a wider theme font must rebuild
+  // that geometry, otherwise labels overflow their foreignObject and lose their last glyph.
+  const previousTheme = await page.inputValue('#theme-select')
+  await page.selectOption('#theme-select', 'claude/claude')
+  const diagramLabels = await settled(
+    page,
+    () => {
+      const labels = [...document.querySelectorAll('#write pre.md-diagram .nodeLabel')]
+      return {
+        theme: document.documentElement.dataset['theme'] === 'claude/claude',
+        claudeFont: labels.some((label) =>
+          getComputedStyle(label.querySelector('p') ?? label).fontFamily.includes('Lucida Console')
+        ),
+        fit:
+          labels.length > 0 &&
+          labels.every((label) => {
+            const box = label.closest('foreignObject')
+            return Boolean(box) && label.getBoundingClientRect().width <= box.getBoundingClientRect().width + 1
+          }),
+      }
+    },
+    10_000
+  )
+  const diagramLabelsOk = Object.values(diagramLabels).every(Boolean)
+  tally(diagramLabelsOk)
+  console.log(`  ${diagramLabelsOk ? 'PASS' : 'FAIL'}  ${'diagram labels follow theme fonts'.padEnd(38)}`)
+  if (!diagramLabelsOk) console.log(`        -> ${JSON.stringify(diagramLabels)}`)
+  await page.selectOption('#theme-select', previousTheme)
+  await settled(page, () => ({
+    restored:
+      document.documentElement.dataset['theme'] === document.querySelector('#theme-select')?.value,
+  }))
+
   // Rendering a diagram must not consume its source. The round-trip check above compares
   // the whole document, but it would still pass if the fence and its language were both
   // dropped, so name them here.
@@ -585,6 +643,139 @@ async function run(browser) {
   tally(loadOk)
   console.log(`  ${loadOk ? 'PASS' : 'FAIL'}  ${'loading a document resets state'.padEnd(38)}`)
   if (!loadOk) console.log(`        -> ${JSON.stringify(afterLoad)}`)
+
+  // Source mode keeps the unparsed CodeMirror value authoritative while it is open,
+  // colours Markdown tokens, and parses it into the WYSIWYG editor when Ctrl+/ closes it.
+  // Enter with a fence's language control focused to ensure no positioned WYSIWYG control
+  // can leak through the hidden rendered surface.
+  await page.evaluate(() => window.__kiwidown.setMarkdown('```html\n<div>source</div>\n```\n'))
+  await page.waitForSelector('#write .ty-cm-lang-input')
+  await page.focus('#write .ty-cm-lang-input')
+  await page.keyboard.press('Control+/')
+  const rawSource = '# source\n\n**raw edit**\n'
+  await page.fill('.app-source__input', rawSource)
+  const sourceOpen = await settled(page, () => ({
+    visible: !document.querySelector('.app-source')?.hidden,
+    renderedHidden:
+      Boolean(document.querySelector('content')?.hidden) &&
+      getComputedStyle(document.querySelector('content')).display === 'none',
+    languageChipHidden: !document.querySelector('#write .code-tooltip')?.checkVisibility(),
+    exact: window.__kiwidown.getMarkdown() === '# source\n\n**raw edit**\n',
+    highlighted: Boolean(document.querySelector('.app-source .cm-header')),
+    pressed:
+      document.querySelector('button[aria-label^="Show rendered view"]')?.getAttribute('aria-pressed') ===
+      'true',
+  }))
+
+  // Highlighting and input must share one editing surface. Click deep in a long document
+  // to catch regressions where the visible line and the actual insertion point diverge.
+  const deepSource = Array.from({ length: 220 }, (_, i) => `Line ${i}: plain text`).join('\n')
+  await page.fill('.app-source__input', deepSource)
+  await page.waitForFunction(() =>
+    document.querySelector('.app-source__input')?.textContent?.includes('Line 181:')
+  )
+  const clickPoint = await page.evaluate(async () => {
+    const scroller = document.querySelector('.app-source .cm-scroller')
+    const sample = document.querySelector('.app-source .cm-line')
+    scroller.scrollTop = 181 * Number.parseFloat(getComputedStyle(sample).lineHeight) - 180
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+    const line = [...document.querySelectorAll('.app-source .cm-line')].find((element) =>
+      element.textContent.startsWith('Line 181:')
+    )
+
+    const walker = document.createTreeWalker(line, NodeFilter.SHOW_TEXT)
+    let consumed = 0
+    let node
+    while ((node = walker.nextNode())) {
+      if (consumed + node.data.length > 6) break
+      consumed += node.data.length
+    }
+    const range = document.createRange()
+    range.setStart(node, 6 - consumed)
+    range.collapse(true)
+    const rect = range.getBoundingClientRect()
+    return { x: rect.left, y: rect.top + rect.height / 2 }
+  })
+  await page.mouse.click(clickPoint.x, clickPoint.y)
+  await page.keyboard.type('X')
+  const sourceAligned = await page.evaluate(() => ({
+    aligned: window.__kiwidown.getMarkdown().split('\n')[181]?.includes('X'),
+    oneEditingSurface: document.querySelectorAll('.app-source [contenteditable="true"]').length === 1,
+  }))
+
+  // Mode changes transfer one logical position rather than restoring unrelated view states.
+  // A code block gives us an exact source offset to verify in both directions.
+  const beforeFence = Array.from(
+    { length: 25 },
+    (_, i) => `## Part ${i}\n\nParagraph ${i}.`
+  ).join('\n\n')
+  const codeSource = `${beforeFence}\n\n\`\`\`html\nalpha\nneedle target\nomega\n\`\`\`\n`
+  await page.fill('.app-source__input', codeSource)
+  const codePoint = await page.evaluate(async () => {
+    const scroller = document.querySelector('.app-source .cm-scroller')
+    scroller.scrollTop = scroller.scrollHeight
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+    const line = [...document.querySelectorAll('.app-source .cm-line')].find((element) =>
+      element.textContent.startsWith('needle target')
+    )
+    const walker = document.createTreeWalker(line, NodeFilter.SHOW_TEXT)
+    let consumed = 0
+    let text
+    while ((text = walker.nextNode())) {
+      if (consumed + text.data.length > 6) break
+      consumed += text.data.length
+    }
+    const range = document.createRange()
+    range.setStart(text, 6 - consumed)
+    range.collapse(true)
+    const rect = range.getBoundingClientRect()
+    return { x: rect.left, y: rect.top + rect.height / 2, caretY: rect.top }
+  })
+  await page.mouse.click(codePoint.x, codePoint.y)
+  await page.keyboard.press('Control+/')
+  await page.waitForFunction(() => document.querySelector('.app-source')?.hidden)
+  await page.waitForTimeout(50)
+  const renderedPosition = await page.evaluate(({ caretY }) => {
+    let result
+    window.__kiwidown.withView((view) => {
+      result = {
+        inCode: view.state.selection.$head.parent.type.name === 'code_block',
+        codeOffset: Math.abs(view.state.selection.$head.parentOffset - 12) <= 1,
+        sameViewport: Math.abs(view.coordsAtPos(view.state.selection.head).top - caretY) < 3,
+      }
+    })
+    return result
+  }, codePoint)
+  await page.keyboard.press('Control+/')
+  await page.waitForFunction(() => !document.querySelector('.app-source')?.hidden)
+  await page.waitForTimeout(50)
+  await page.keyboard.type('Z')
+  const sourcePosition = await page.evaluate(({ caretY }) => {
+    const line = [...document.querySelectorAll('.app-source .cm-line')].find((element) =>
+      element.textContent.includes('needle')
+    )
+    return {
+      sourceCaret: window.__kiwidown.getMarkdown().includes('needleZ target'),
+      sourceViewport: Math.abs(line.getBoundingClientRect().top - caretY) < 3,
+    }
+  }, codePoint)
+  Object.assign(sourcePosition, renderedPosition)
+
+  await page.fill('.app-source__input', rawSource)
+  await page.keyboard.press('Control+/')
+  const sourceClosed = await settled(page, () => ({
+    hidden: Boolean(document.querySelector('.app-source')?.hidden),
+    rendered: document.querySelector('#write strong')?.textContent === 'raw edit',
+    markdown: window.__kiwidown.getMarkdown().includes('**raw edit**'),
+    released:
+      document.querySelector('button[aria-label^="Show Markdown source"]')?.getAttribute('aria-pressed') ===
+      'false',
+  }))
+  const sourceResult = { ...sourceOpen, ...sourceAligned, ...sourcePosition, ...sourceClosed }
+  const sourceOk = Object.values(sourceResult).every(Boolean)
+  tally(sourceOk)
+  console.log(`  ${sourceOk ? 'PASS' : 'FAIL'}  ${'source mode edits and toggles'.padEnd(38)}`)
+  if (!sourceOk) console.log(`        -> ${JSON.stringify(sourceResult)}`)
 
   // ?src= fetches and adopts a remote document. Pointed at a file we know is served, so
   // this exercises fetch, naming and load rather than any particular content.

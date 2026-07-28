@@ -78,7 +78,7 @@ Inside `#write`:
 | table | `<table>` `<thead>` `<tbody>` `<th>` `<td>` | native |
 | bullet list | `<ul class="ul-list">` | no vendored theme keys off it today; Typora emits it and the contract is Typora's DOM |
 | ordered list | `<ol class="ol-list">` | |
-| task item | `<li class="task-list-item md-task-list-item task-list-done\|task-list-not-done">` with a leading `<input type="checkbox">` | **both** class names — see below |
+| task item | `<li class="task-list-item md-task-list-item task-list-done\|task-list-not-done">` with a leading `<input type="checkbox">` (`checked` on done items) | **both** class names; checked items expose both `[checked]` and `:checked` — see below |
 | code fence | `<pre class="md-fences ty-contain-cm cm-s-inner CodeMirror-wrap" lang="…">` | `lang` only when tagged: claude uses `[lang]:not([lang=""])::before` |
 | fence language field | `<div class="code-tooltip">` → `<input class="ty-input ty-input-after ty-cm-lang-input">` | `.code-tooltip` → `.ty-cm-lang-input` |
 | fence tokens | `<span class="token … cm-keyword">` etc. | see below |
@@ -133,7 +133,8 @@ is rejected outright.
 A widget decoration at `pos + 1` — the first position inside the list item, before its
 paragraph — renders as a direct child of the `<li>`, which is what `base.css`'s
 `.md-task-list-item > input` and the themes' `li.md-task-list-item.task-list-done::before`
-both require.
+both require. Checked widgets set both the live `checked` property and the boolean
+`checked` attribute: LightMind selects `:checked`, while Notion selects `[checked]`.
 
 ### Fence tokens carry CodeMirror's class names, not Prism's
 

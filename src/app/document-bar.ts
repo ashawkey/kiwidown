@@ -1,4 +1,4 @@
-import { Download, FilePlus, FolderOpen, Save, X } from 'lucide'
+import { Download, Eye, EyeOff, FilePlus, FolderOpen, Save, X } from 'lucide'
 
 import type { DocumentState, DocumentStore } from '../doc'
 import { supportsFileSystemAccess } from '../doc'
@@ -18,7 +18,12 @@ import { toast } from './toast'
  * back to the file the user opened, so the button says "Download" and the document stays
  * unbound rather than pretending a save happened.
  */
-export function createDocumentBar(store: DocumentStore): {
+export interface ViewModeControl {
+  isSource: () => boolean
+  toggle: () => void
+}
+
+export function createDocumentBar(store: DocumentStore, viewMode: ViewModeControl): {
   element: HTMLElement
   render: () => void
 } {
@@ -174,8 +179,11 @@ export function createDocumentBar(store: DocumentStore): {
     shortcut: 'Ctrl+O',
   })
   const saveButton = iconButton(Save, 'Save', () => void store.save(), { shortcut: 'Ctrl+S' })
+  const sourceButton = iconButton(Eye, 'Show Markdown source', () => viewMode.toggle(), {
+    shortcut: 'Ctrl+/',
+  })
 
-  group.append(newButton, openButton, saveButton)
+  group.append(newButton, openButton, saveButton, sourceButton)
   wrap.append(strip, group)
 
   let shown: string | undefined
@@ -249,6 +257,14 @@ export function createDocumentBar(store: DocumentStore): {
     saveButton.setAttribute('aria-label', description)
     saveButton.replaceChildren(icon(writesBack ? Save : Download))
     saveButton.classList.toggle('is-emphasis', active.dirty)
+
+    const source = viewMode.isSource()
+    const modeLabel = source ? 'Show rendered view' : 'Show Markdown source'
+    const modeDescription = `${modeLabel}  (Ctrl+/)`
+    sourceButton.title = modeDescription
+    sourceButton.setAttribute('aria-label', modeDescription)
+    sourceButton.setAttribute('aria-pressed', String(source))
+    sourceButton.replaceChildren(icon(source ? EyeOff : Eye))
   }
 
   render()
@@ -283,12 +299,15 @@ function stepDocument(store: DocumentStore, delta: number): void {
  * The tab commands take Alt as well, for the same reason Ctrl+N does: the browser keeps
  * Ctrl+Tab, Ctrl+W and Ctrl+1…9 for its own tabs and never delivers them to the page.
  */
-export function bindDocumentShortcuts(store: DocumentStore): () => void {
+export function bindDocumentShortcuts(store: DocumentStore, viewMode: ViewModeControl): () => void {
   const onKeyDown = (event: KeyboardEvent) => {
     if (!(event.ctrlKey || event.metaKey)) return
     const key = event.key.toLowerCase()
 
-    if (key === 's') {
+    if ((event.code === 'Slash' || event.key === '/') && !event.altKey) {
+      event.preventDefault()
+      viewMode.toggle()
+    } else if (key === 's') {
       event.preventDefault()
       void (event.shiftKey ? store.saveAs() : store.save())
     } else if (key === 'o') {
