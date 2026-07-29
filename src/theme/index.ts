@@ -2,12 +2,12 @@ import './compat.css'
 import './bridge.css'
 
 export interface ThemeEntry {
-  /** `<pack>/<theme>`, e.g. `notion/notion-light`. Stable; used for persistence. */
+  /** `<pack>/<theme>`, e.g. `kiwi/su`. Stable; used for persistence. */
   id: string
   name: string
   pack: string
   dark: boolean
-  /** Path under public/themes/, e.g. `notion/themes/enhanced/notion-light-enhanced.css`. */
+  /** Path under public/themes/, e.g. `latex/target/latex.css`. */
   href: string
   license: string
   author: string
@@ -22,8 +22,8 @@ interface ThemeIndex {
 const STORAGE_KEY = 'kiwidown.theme'
 /** Generated views whose geometry depends on theme fonts listen for this. */
 export const THEME_CHANGE_EVENT = 'kiwidown:themechange'
-/** A clean, familiar light document. Falls back to whatever is first if it's ever dropped. */
-const DEFAULT_THEME = 'lightmind/lightmind'
+/** Our own light theme. Falls back to whatever is first if it's ever dropped. */
+const DEFAULT_THEME = 'kiwi/su'
 
 /** Resolve a path in public/ against the document base, so any deploy path works. */
 function publicUrl(path: string): string {

@@ -53,8 +53,8 @@ semantic HTML is most of the way there already.
 
 Milkdown renders fences as `<pre><code>`. Typora's fences contain no `<code>` at all — the
 text lives in CodeMirror's elements. So themes style `code` purely as *inline* code, and
-that lands on the `<code>` inside our fence. Notion's `code { background-color; padding }`
-is the plain case — a tinted, padded box painted around every line of every code block.
+that lands on the `<code>` inside our fence. A `code { background-color; padding }` rule is
+the plain case — a tinted, padded box painted around every line of every code block.
 LaTeX's bare `code { font-family }` is the quiet one: it silently overrides the fence's own
 font.
 
@@ -134,7 +134,8 @@ A widget decoration at `pos + 1` — the first position inside the list item, be
 paragraph — renders as a direct child of the `<li>`, which is what `base.css`'s
 `.md-task-list-item > input` and the themes' `li.md-task-list-item.task-list-done::before`
 both require. Checked widgets set both the live `checked` property and the boolean
-`checked` attribute: LightMind selects `:checked`, while Notion selects `[checked]`.
+`checked` attribute: LightMind selects `:checked`, others select `[checked]`. Emitting one
+alone breaks half of them, so both are required.
 
 ### Fence tokens carry CodeMirror's class names, not Prism's
 
@@ -250,8 +251,8 @@ the same way twice, and both answers are markup themes already know:
 - **The fence's language** lives in an `input.ty-cm-lang-input` inside a `.code-tooltip`,
   which Typora positions from its app code rather than from `base.css`. So compat places it
   in the bottom-right corner and themes move it where they want it — claude relocates it to
-  the top-left and draws its own `attr(lang)` label, notion hangs it under the block as a
-  tab (`top: 100%`). That last one is why `.md-fences` must **not** be a scroll container:
+  the top-left and draws its own `attr(lang)` label, others hang it under the block as a tab
+  (`top: 100%`). That last one is why `.md-fences` must **not** be a scroll container:
   the fence would clip a field the theme deliberately puts outside it. The scroller is the
   `<code>` instead, which is also where Typora has it (`.CodeMirror-scroll`, inside).
 - **A formula's source** is an `md-rawblock`: `.md-rawblock-input` holding the TeX,

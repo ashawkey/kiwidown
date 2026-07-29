@@ -5,8 +5,8 @@ import { knownLanguages } from '../code-highlight/languages'
  *
  * Typora puts one there and themes already know it: a `.code-tooltip` holding
  * `input.ty-input.ty-input-after.ty-cm-lang-input`. Emitting that exact markup means a
- * theme's own treatment of the label — notion hangs it under the block as a tab, claude
- * moves it to the top-left — applies without any of them being written for us.
+ * theme's own treatment of the label — claude moves it to the top-left, others hang it under
+ * the block as a tab — applies without any of them being written for us.
  *
  * Suggestions come from a shared <datalist>: one element for the whole page rather than one
  * per fence, since a document can easily hold dozens.

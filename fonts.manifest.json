@@ -1,0 +1,36 @@
+{
+  "$comment": [
+    "Webfonts vendored into public/fonts/. Run `npm run fonts:fetch` to sync.",
+    "",
+    "Separate from themes.manifest.json because a font is not a theme: it is vendored once",
+    "and any number of themes may reference it. Community themes still bring their own fonts",
+    "along inside their pack, exactly as upstream shipped them — this file is only for fonts",
+    "our own built-in themes ask for.",
+    "",
+    "Each family is published on npm as a set of stylesheets that split one font across many",
+    "`unicode-range` subsets. That splitting is the entire reason a CJK face is affordable",
+    "here: the whole family is megabytes, but a browser only downloads the subsets whose",
+    "ranges the document actually uses, so an English page pays for a couple of them.",
+    "",
+    "'sheets' names the stylesheets to take — one per weight. Their @font-face rules are",
+    "concatenated into <slug>.css and every woff2 they reference is vendored alongside, so",
+    "the result is self-contained and the site still works offline and from disk.",
+    "",
+    "Only fonts whose licence permits redistribution belong here. See THIRD-PARTY.md."
+  ],
+  "families": [
+    {
+      "slug": "lxgw-wenkai",
+      "name": "LXGW WenKai",
+      "package": "lxgw-wenkai-webfont",
+      "version": "1.7.0",
+      "license": "OFL-1.1",
+      "author": "LXGW",
+      "source": "https://github.com/lxgw/LxgwWenKai",
+      "sheets": ["lxgwwenkai-regular.css", "lxgwwenkai-bold.css"],
+      "docs": ["OFL.txt", "LICENSE"],
+      "skipped": ["lxgwwenkai-light.css", "lxgwwenkaimono-*.css"],
+      "skipReason": "Only the two weights the built-in themes use. Each further weight is another ~4.4 MB."
+    }
+  ]
+}

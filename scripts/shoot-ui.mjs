@@ -5,7 +5,7 @@
 // the real layout and scrolls the document under the glass.
 //
 //   node scripts/shoot-ui.mjs            # one light theme and one dark one
-//   node scripts/shoot-ui.mjs vue latex  # ids, or substrings of them
+//   node scripts/shoot-ui.mjs kiwi latex # ids, or substrings of them
 
 import { spawn } from 'node:child_process'
 import { mkdir, readFile, rm } from 'node:fs/promises'

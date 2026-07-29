@@ -1,6 +1,10 @@
 {
-  "generated": "2026-07-28T00:00:12.240Z",
+  "generated": "2026-07-29T06:26:44.933Z",
   "packs": {
+    "kiwi": {
+      "fingerprint": "f78391e8214e92b4",
+      "files": 6
+    },
     "claude": {
       "fingerprint": "33c7d8fc564a1b64",
       "files": 6
@@ -12,17 +16,49 @@
     "latex": {
       "fingerprint": "bf729ca40180517f",
       "files": 4
-    },
-    "vue": {
-      "fingerprint": "2e3704de6d9fd360",
-      "files": 32
-    },
-    "notion": {
-      "fingerprint": "7a05eee767e7ac98",
-      "files": 7
     }
   },
   "themes": [
+    {
+      "id": "kiwi/su",
+      "name": "Su 素",
+      "pack": "Kiwidown",
+      "dark": false,
+      "href": "kiwi/su.css",
+      "license": "MIT",
+      "author": "ashawkey",
+      "source": "https://github.com/ashawkey/kiwidown"
+    },
+    {
+      "id": "kiwi/qi",
+      "name": "Qi 漆",
+      "pack": "Kiwidown",
+      "dark": true,
+      "href": "kiwi/qi.css",
+      "license": "MIT",
+      "author": "ashawkey",
+      "source": "https://github.com/ashawkey/kiwidown"
+    },
+    {
+      "id": "kiwi/glassy-su",
+      "name": "Glassy Su 璃素",
+      "pack": "Kiwidown",
+      "dark": false,
+      "href": "kiwi/glassy-su.css",
+      "license": "MIT",
+      "author": "ashawkey",
+      "source": "https://github.com/ashawkey/kiwidown"
+    },
+    {
+      "id": "kiwi/glassy-qi",
+      "name": "Glassy Qi 璃漆",
+      "pack": "Kiwidown",
+      "dark": true,
+      "href": "kiwi/glassy-qi.css",
+      "license": "MIT",
+      "author": "ashawkey",
+      "source": "https://github.com/ashawkey/kiwidown"
+    },
     {
       "id": "claude/claude",
       "name": "Claude",
@@ -82,76 +118,6 @@
       "license": "MIT",
       "author": "SunMoonTrain",
       "source": "https://github.com/SunMoonTrain/LightMindTheme"
-    },
-    {
-      "id": "notion/notion-dark",
-      "name": "Notion Dark",
-      "pack": "Notion",
-      "dark": true,
-      "href": "notion/themes/enhanced/notion-dark-enhanced.css",
-      "license": "MIT",
-      "author": "adrian-fuertes",
-      "source": "https://github.com/adrian-fuertes/typora-notion-theme"
-    },
-    {
-      "id": "notion/notion-dark-classic",
-      "name": "Notion Dark Classic",
-      "pack": "Notion",
-      "dark": true,
-      "href": "notion/themes/classic/notion-dark-classic.css",
-      "license": "MIT",
-      "author": "adrian-fuertes",
-      "source": "https://github.com/adrian-fuertes/typora-notion-theme"
-    },
-    {
-      "id": "notion/notion-darker",
-      "name": "Notion Darker",
-      "pack": "Notion",
-      "dark": true,
-      "href": "notion/themes/enhanced/notion-darker-enhanced.css",
-      "license": "MIT",
-      "author": "adrian-fuertes",
-      "source": "https://github.com/adrian-fuertes/typora-notion-theme"
-    },
-    {
-      "id": "notion/notion-light",
-      "name": "Notion Light",
-      "pack": "Notion",
-      "dark": false,
-      "href": "notion/themes/enhanced/notion-light-enhanced.css",
-      "license": "MIT",
-      "author": "adrian-fuertes",
-      "source": "https://github.com/adrian-fuertes/typora-notion-theme"
-    },
-    {
-      "id": "notion/notion-light-classic",
-      "name": "Notion Light Classic",
-      "pack": "Notion",
-      "dark": false,
-      "href": "notion/themes/classic/notion-light-classic.css",
-      "license": "MIT",
-      "author": "adrian-fuertes",
-      "source": "https://github.com/adrian-fuertes/typora-notion-theme"
-    },
-    {
-      "id": "vue/vue",
-      "name": "Vue",
-      "pack": "Vue",
-      "dark": false,
-      "href": "vue/vue.css",
-      "license": "Apache-2.0",
-      "author": "blinkfox",
-      "source": "https://github.com/blinkfox/typora-vue-theme"
-    },
-    {
-      "id": "vue/vue-dark",
-      "name": "Vue Dark",
-      "pack": "Vue",
-      "dark": true,
-      "href": "vue/vue-dark.css",
-      "license": "Apache-2.0",
-      "author": "blinkfox",
-      "source": "https://github.com/blinkfox/typora-vue-theme"
     }
   ]
 }

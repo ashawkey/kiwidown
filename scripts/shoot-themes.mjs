@@ -7,7 +7,7 @@
 //
 // Uses the locally installed Chrome (no Playwright browser download).
 //   npm run themes:shoot             # every theme
-//   npm run themes:shoot -- notion   # only ids containing "notion"
+//   npm run themes:shoot -- kiwi     # only ids containing "kiwi"
 
 import { spawn } from 'node:child_process'
 import { mkdir, readFile, rm } from 'node:fs/promises'

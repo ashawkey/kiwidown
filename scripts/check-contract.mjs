@@ -81,7 +81,7 @@ const CHECKS = [
   {
     what: 'checked box reflects attribute state',
     selector: '#write li.task-list-done > input[checked]',
-    why: 'themes use both `:checked` (LightMind) and `[checked]` (Notion)',
+    why: 'themes select on both `:checked` (LightMind) and `[checked]`',
   },
   { what: 'footnote reference', selector: '#write sup.md-footnote' },
   {
@@ -827,6 +827,18 @@ async function run(browser) {
     await page.waitForTimeout(100)
   }
 
+  await startTyping('before\n')
+  await page.keyboard.press('Tab')
+  await page.keyboard.type('after')
+  record(
+    'Tab indents without moving focus',
+    await settled(page, () => ({
+      focused: document.activeElement === document.querySelector('#write'),
+      text: document.querySelector('#write > p')?.textContent === 'before  after',
+      markdown: window.__kiwidown.getMarkdown().includes('before  after'),
+    }))
+  )
+
   await startTyping('# probe\n\ntext\n')
   await page.keyboard.press('Enter')
   await page.keyboard.type('$$')
@@ -942,7 +954,7 @@ async function run(browser) {
 
   // Long lines scroll inside the fence rather than stretching the page. The scroller moved
   // from the <pre> to the <code> so the language field would have a corner to sit in that
-  // doesn't scroll away — and so themes can hang it outside the block, as notion does.
+  // doesn't scroll away — and so a theme can hang it outside the block entirely.
   await page.evaluate(() => {
     window.__kiwidown.setMarkdown(`# probe\n\n\`\`\`js\nconst x = "${'wide '.repeat(120)}"\n\`\`\`\n`)
   })

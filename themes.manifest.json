@@ -14,12 +14,31 @@
     "pull in; @font-face rules pointing at skipped assets are removed automatically, since",
     "leaving them means a 404 the browser tries to parse as a font.",
     "",
+    "A pack marked 'local' is ours: source committed under public/themes/<slug>/, with no",
+    "upstream to reconcile against. It is never downloaded and never deleted, but it is",
+    "indexed and reference-checked like every other pack. Local packs are listed first, and",
+    "the order of their themes here is the order the picker shows them in.",
+    "",
     "Every pack carries its own licence file and is credited in the UI. Only packs that",
     "grant redistribution belong here -- Typora's own themes (typora-default-themes, and",
     "Academic from typora-theme-gallery) carry no licence at all, which means all rights",
     "reserved, so they are deliberately not vendored. See THIRD-PARTY.md."
   ],
   "packs": [
+    {
+      "slug": "kiwi",
+      "name": "Kiwidown",
+      "local": true,
+      "source": "https://github.com/ashawkey/kiwidown",
+      "license": "MIT",
+      "author": "ashawkey",
+      "themes": [
+        { "slug": "su", "name": "Su 素", "css": "su.css", "dark": false },
+        { "slug": "qi", "name": "Qi 漆", "css": "qi.css", "dark": true },
+        { "slug": "glassy-su", "name": "Glassy Su 璃素", "css": "glassy-su.css", "dark": false },
+        { "slug": "glassy-qi", "name": "Glassy Qi 璃漆", "css": "glassy-qi.css", "dark": true }
+      ]
+    },
     {
       "slug": "claude",
       "name": "Claude",
@@ -59,55 +78,6 @@
       "themes": [
         { "slug": "latex", "name": "LaTeX", "css": "target/latex.css", "dark": false },
         { "slug": "latex-dark", "name": "LaTeX Dark", "css": "target/latex-dark.css", "dark": true }
-      ]
-    },
-    {
-      "slug": "vue",
-      "name": "Vue",
-      "repo": "blinkfox/typora-vue-theme",
-      "ref": "master",
-      "license": "Apache-2.0",
-      "author": "blinkfox",
-      "files": ["vue.css", "vue-dark.css", "vue/fonts.css", "vue/*.woff2", "LICENSE"],
-      "themes": [
-        { "slug": "vue", "name": "Vue", "css": "vue.css", "dark": false },
-        { "slug": "vue-dark", "name": "Vue Dark", "css": "vue-dark.css", "dark": true }
-      ]
-    },
-    {
-      "slug": "notion",
-      "name": "Notion",
-      "repo": "adrian-fuertes/typora-notion-theme",
-      "ref": "main",
-      "license": "MIT",
-      "author": "adrian-fuertes",
-      "files": ["themes/classic/*.css", "themes/enhanced/*.css", "LICENSE"],
-      "themes": [
-        {
-          "slug": "notion-light",
-          "name": "Notion Light",
-          "css": "themes/enhanced/notion-light-enhanced.css",
-          "dark": false
-        },
-        {
-          "slug": "notion-light-classic",
-          "name": "Notion Light Classic",
-          "css": "themes/classic/notion-light-classic.css",
-          "dark": false
-        },
-        { "slug": "notion-dark", "name": "Notion Dark", "css": "themes/enhanced/notion-dark-enhanced.css", "dark": true },
-        {
-          "slug": "notion-darker",
-          "name": "Notion Darker",
-          "css": "themes/enhanced/notion-darker-enhanced.css",
-          "dark": true
-        },
-        {
-          "slug": "notion-dark-classic",
-          "name": "Notion Dark Classic",
-          "css": "themes/classic/notion-dark-classic.css",
-          "dark": true
-        }
       ]
     }
   ]

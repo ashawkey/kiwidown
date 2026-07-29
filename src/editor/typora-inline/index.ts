@@ -15,7 +15,7 @@ import { remarkTyporaInline } from './remark-typora-inline'
 
 export const highlightAttr = $markAttr('typora_highlight')
 
-/** `==text==` → `<mark>`. Themes style `mark` directly; vue.css and others do. */
+/** `==text==` → `<mark>`. Themes style `mark` directly, as our own Su and Qi do. */
 export const highlightSchema = $markSchema('typora_highlight', (ctx) => ({
   parseDOM: [{ tag: 'mark' }],
   toDOM: (mark) => ['mark', ctx.get(highlightAttr.key)(mark)],

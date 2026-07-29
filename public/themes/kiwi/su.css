@@ -1,0 +1,57 @@
+/*
+ * Su 素 — Kiwidown's light theme, and the one the editor opens with.
+ *
+ * 素 is undyed silk: white, plain, nothing added. So the page is white and the ink is not
+ * black but a warm charcoal, the colour writing actually is on paper. Every grey in the
+ * scale below carries the same warmth, which is what keeps a white page from reading cold.
+ *
+ * There is exactly one hue, and it is a muted vermilion — 朱, the red of a seal pressed at
+ * the end of a scroll. It appears where something is being pointed at and nowhere else:
+ * links, inline code, the footnote marks, the highlight, and the short segment that opens
+ * the rule under the title. Qi 漆 uses the same hue lightened, because the two themes are
+ * one idea in two materials.
+ *
+ * Structure, type and spacing all live in kiwi.css. This file is the palette and nothing
+ * else — which is also why the two themes can never drift apart.
+ */
+
+@import '../../fonts/lxgw-wenkai/lxgw-wenkai.css';
+@import './kiwi.css';
+
+:root {
+  /* Pinned in both directions, like Qi's: a light document should keep a light scrollbar
+     and light checkboxes on a dark desktop. */
+  color-scheme: light;
+
+  --kiwi-bg: #ffffff;
+
+  --kiwi-ink: #26221c;
+  --kiwi-ink-strong: #14110d;
+  --kiwi-ink-soft: #6b6459;
+  --kiwi-ink-faint: #a49c90;
+
+  --kiwi-rule: #e7e2d8;
+  --kiwi-wash: #f8f6f2;
+  --kiwi-wash-edge: #ebe6dc;
+
+  --kiwi-accent: #9c4f43;
+  --kiwi-accent-ink: #8c4436;
+  --kiwi-accent-wash: #f2e2d8;
+
+  /* Warm enough to belong to the page, pale enough to read straight through. */
+  --kiwi-select: #f0e3d5;
+
+  /*
+   * Fenced code. Four hues on a near-white wash, all of them held down in saturation so a
+   * listing reads as a block of text rather than as a diagram: indigo for the words the
+   * language reserves, olive for the text a program carries, the page's own vermilion for
+   * literal values, and warm grey for punctuation and asides.
+   */
+  --cm-comment: #a1978a;
+  --cm-keyword: #4b5e80;
+  --cm-string: #5c7150;
+  --cm-number: #9c5f43;
+  --cm-name: #2b2620;
+  --cm-punct: #857d73;
+  --cm-error: #a83b2c;
+}

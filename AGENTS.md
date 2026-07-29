@@ -18,6 +18,8 @@
 - `src/app/`: application chrome; `src/welcome/`: first-run and contract-check fixture.
 - `doc/dom-contract.md`: authoritative specification for the DOM expected by unmodified Typora themes.
 - `themes.manifest.json`: source of truth for vendored themes. `public/themes/index.json` and theme files are reconciled by `scripts/fetch-themes.mjs`.
+- `public/themes/kiwi/`: the four built-in themes — source, not vendored material. `kiwi.css` holds the structure and `glassy.css` the Liquid Glass material; `su.css`, `qi.css`, `glassy-su.css` and `glassy-qi.css` are palettes only. The glazed pair import `kiwi.css` then `glassy.css`, so they inherit the DOM-contract coverage and restate only material differences — keep it that way rather than forking the structure.
+- `fonts.manifest.json` and `public/fonts/`: webfonts our own themes ask for, reconciled by `scripts/fetch-fonts.mjs`. Fonts inside theme packs stay in their pack.
 - `public/typora-base/`: committed, vendored Typora base styles. `dist/` and screenshot directories are generated and ignored.
 - `scripts/`: browser regression checks, screenshot harnesses, asset fetchers, and diagnostics.
 
@@ -32,6 +34,8 @@
 - Raw inline HTML is deliberately rendered as text because `?src=` can load cross-origin Markdown. Do not enable HTML rendering without sanitization.
 - KaTeX and Mermaid are intentionally dynamically imported only when needed; avoid making them eager dependencies.
 - Treat `themes.manifest.json` as authoritative. Add/remove/update packs there, then run `npm run themes:fetch`; do not hand-maintain `public/themes/index.json`. Preserve upstream-relative layouts and include only themes whose licenses permit redistribution; update `THIRD-PARTY.md` when licensing changes. Theme fetching uses the network and mutates committed vendored assets, so it is not a routine verification step.
+- Packs marked `"local": true` (currently only `kiwi`) are source: never downloaded, never deleted, but still indexed and reference-checked. Editing them still requires a `themes:fetch` run to regenerate `public/themes/index.json`, and that run touches the network zero times. The reference check reads comments too, so an import rule or asset link written inside one is reported as a missing file.
+- Webfonts our own themes use go in `fonts.manifest.json` → `public/fonts/`, not in a theme pack. Prefer families published as `unicode-range` subsets: a CJK family is only affordable because a page downloads the ranges it sets and no more. Vendor only the weights actually used, and check the license permits redistribution as a webfont.
 
 ## Verification
 

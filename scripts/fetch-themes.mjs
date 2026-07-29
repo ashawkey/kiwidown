@@ -22,11 +22,16 @@
 // A pack is considered current when its directory exists and the manifest entry that
 // produced it is byte-for-byte what it was last time -- recorded per pack in index.json, so
 // changing a `ref`, a `files` glob or a `skip` list re-fetches that pack and nothing else.
+//
+// One pack is marked `"local": true`: Kiwidown's own built-in themes, which are source, not
+// vendored material. They have no upstream to reconcile against, so they are never
+// downloaded and never deleted -- but they are indexed and reference-checked exactly like
+// the rest, which is what keeps a typo in one of our own url()s from reaching a screenshot.
 
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { createHash } from 'node:crypto'
 import { existsSync } from 'node:fs'
-import { dirname, join, posix } from 'node:path'
+import { dirname, join, posix, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { unzipSync } from 'fflate'
@@ -210,20 +215,35 @@ function stripDeadImports(css, cssPath, vendored) {
 }
 
 /**
- * Report local references a pack's stylesheets make that we didn't vendor.
+ * Report local references a pack's stylesheets make that nothing answers.
  *
  * By the time this runs, dead `@font-face` rules have already been removed -- so anything
  * still reported is a stylesheet, image or font referenced from somewhere the stripper
  * doesn't reach, and means the manifest needs another entry.
+ *
+ * A reference that climbs out of the pack is resolved against the served `public/` tree
+ * instead, because that is what the browser will do: theme CSS is attached with
+ * `@import url(...)`, so its relative URLs resolve from the theme file's own location. Our
+ * built-in themes use this to reach a shared webfont in public/fonts/ rather than carrying
+ * their own copy. Anything landing outside public/ is unreachable at runtime and is
+ * reported as missing however real the file is on disk.
  */
-function checkReferences(files, contents) {
+function checkReferences(files, contents, slug) {
   const have = new Set(files)
+  const packDir = join(OUT_DIR, slug)
+  const publicDir = join(ROOT, 'public')
   const missing = new Set()
+
+  const servedElsewhere = (ref) => {
+    const abs = join(packDir, ref)
+    return abs.startsWith(publicDir + sep) && existsSync(abs)
+  }
 
   for (const [path, buf] of contents) {
     if (!path.endsWith('.css')) continue
     for (const resolved of localRefs(buf.toString('utf8'), path)) {
-      if (!have.has(resolved)) missing.add(`${resolved}  (from ${path})`)
+      if (have.has(resolved) || servedElsewhere(resolved)) continue
+      missing.add(`${resolved}  (from ${path})`)
     }
   }
   for (const m of missing) console.warn(`    ! MISSING reference: ${m}`)
@@ -306,6 +326,8 @@ async function main() {
   }
 
   // Packs the manifest no longer lists. Removing a theme is exactly this and nothing else.
+  // Local packs are listed too, so this never reaches them; deleting one would mean
+  // deleting source.
   const wanted = new Set(manifest.packs.map((p) => p.slug))
   for (const slug of Object.keys(previous.packs ?? {})) {
     if (wanted.has(slug)) continue
@@ -320,10 +342,16 @@ async function main() {
   let fetched = 0
 
   for (const pack of manifest.packs) {
-    const origin = pack.zip ? pack.zip.split('/').slice(-1)[0] : `${pack.repo}@${pack.ref}`
+    const origin = pack.local ? 'built in' : pack.zip ? pack.zip.split('/').slice(-1)[0] : `${pack.repo}@${pack.ref}`
     const stamp = fingerprint(pack)
+    // A local pack is source: it is always already here, and re-fetching it would mean
+    // downloading over the top of something nobody published.
     const current =
-      !force && previous.packs?.[pack.slug]?.fingerprint === stamp && existsSync(join(OUT_DIR, pack.slug))
+      pack.local || (!force && previous.packs?.[pack.slug]?.fingerprint === stamp && existsSync(join(OUT_DIR, pack.slug)))
+
+    if (pack.local && !existsSync(join(OUT_DIR, pack.slug))) {
+      throw new Error(`local pack "${pack.slug}" is missing from public/themes/ — it is source, not a download`)
+    }
 
     let files
     let contents
@@ -334,7 +362,7 @@ async function main() {
       contents = await Promise.all(
         files.map(async (path) => [path, await readFile(join(OUT_DIR, pack.slug, path))])
       )
-      console.log(`\n${pack.name}  (${origin}, ${pack.license})  — vendored, skipping`)
+      console.log(`\n${pack.name}  (${origin}, ${pack.license})${pack.local ? '' : '  — vendored, skipping'}`)
     } else {
       console.log(`\n${pack.name}  (${origin}, ${pack.license})`)
       ;({ files, contents } = await fetchPack(pack))
@@ -345,7 +373,7 @@ async function main() {
     totalBytes += bytes
     console.log(`    ${files.length} files, ${(bytes / 1024).toFixed(0)} KB`)
 
-    totalMissing += checkReferences(files, contents)
+    totalMissing += checkReferences(files, contents, pack.slug)
     packs[pack.slug] = { fingerprint: stamp, files: files.length }
 
     for (const theme of pack.themes) {
@@ -367,7 +395,19 @@ async function main() {
     }
   }
 
-  index.sort((a, b) => a.pack.localeCompare(b.pack) || a.name.localeCompare(b.name))
+  // Built-in packs first, then the vendored ones alphabetically. The picker groups by pack
+  // in index order, and the theme the editor opens with should head the list rather than be
+  // filed under K between Claude and LaTeX.
+  const builtin = new Set(manifest.packs.filter((p) => p.local).map((p) => p.name))
+  const rank = (t) => (builtin.has(t.pack) ? 0 : 1)
+  index.sort((a, b) => {
+    if (rank(a) !== rank(b)) return rank(a) - rank(b)
+    // Within a pack we wrote, the manifest's order is the intended one — light before dark,
+    // default first — and Array#sort is stable, so returning 0 keeps it. Vendored packs have
+    // no order we know of, so they get an alphabetical one.
+    if (rank(a) === 0) return 0
+    return a.pack.localeCompare(b.pack) || a.name.localeCompare(b.name)
+  })
   await writeFile(
     join(OUT_DIR, 'index.json'),
     `${JSON.stringify({ generated: new Date().toISOString(), packs, themes: index }, null, 2)}\n`,

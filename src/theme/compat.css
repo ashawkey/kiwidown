@@ -192,8 +192,8 @@
    * scroll container scrolls away with the content, and the language field has to stay in
    * the corner however far the code runs.
    *
-   * The fence itself must not clip, either — themes hang the language field outside it
-   * (notion attaches it under the block as a tab, `top: 100%`), which only works if the
+   * The fence itself must not clip, either — a theme may hang the language field outside it
+   * entirely, attaching it under the block as a tab with `top: 100%`. That only works if the
    * fence is not a scroll container.
    */
   #write .md-fences > code {

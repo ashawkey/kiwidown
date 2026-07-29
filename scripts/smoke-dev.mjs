@@ -38,16 +38,38 @@ const checks = await page.evaluate(() => {
   const write = document.getElementById('write')
   const slot = document.getElementById('typora-theme-slot')
   const base = document.getElementById('typora-base-slot')
+  // An imported sheet can import more of its own — the built-in themes split structure and
+  // palette across two files, and pull in a webfont besides — so count the whole tree. Just
+  // reading the entry sheet's length would report 3 for a theme that is a thousand rules,
+  // and would go on reporting 3 if everything it imports had failed to load.
+  const countRules = (sheet) => {
+    if (!sheet) return 0
+    let n = 0
+    for (const rule of sheet.cssRules) {
+      if (rule instanceof CSSImportRule) n += countRules(rule.styleSheet)
+      else n++
+    }
+    return n
+  }
   const imported = (el) => {
     const rule = el?.sheet?.cssRules?.[0]
-    return rule instanceof CSSImportRule ? (rule.styleSheet?.cssRules.length ?? 0) : 0
+    return rule instanceof CSSImportRule ? countRules(rule.styleSheet) : 0
   }
   return {
     themeOptions: document.querySelectorAll('#theme-select option').length,
     writeChildren: write?.children.length ?? 0,
     baseRules: imported(base),
     themeRules: imported(slot),
-    // Proves the theme actually won the cascade rather than merely loading.
+    /*
+     * Proves the theme actually won the cascade rather than merely loading.
+     *
+     * This used to compare the page background against white, which stopped meaning
+     * anything the moment the default theme became a white one — base.css's own default is
+     * also #ffffff, so a completely unstyled page passed. base.css's Helvetica/Arial stack
+     * is the better witness: every theme replaces it, and testing that it is *gone* keeps
+     * the check from pinning whichever theme happens to be the default.
+     */
+    themeOverridesBaseFont: !getComputedStyle(write).fontFamily.startsWith('"Helvetica Neue"'),
     bodyBg: getComputedStyle(document.documentElement).backgroundColor,
     taskItems: document.querySelectorAll('li.md-task-list-item').length,
   }
@@ -56,6 +78,7 @@ const checks = await page.evaluate(() => {
 console.log(checks)
 for (const [k, v] of Object.entries(checks)) {
   if (typeof v === 'number' && v === 0) problems.push(`${k} is 0`)
+  if (v === false) problems.push(`${k} is false`)
 }
 
 await browser.close()

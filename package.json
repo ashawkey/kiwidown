@@ -10,6 +10,7 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "themes:fetch": "node scripts/fetch-themes.mjs",
+    "fonts:fetch": "node scripts/fetch-fonts.mjs",
     "themes:stats": "node scripts/theme-stats.mjs",
     "themes:shoot": "npm run build && node scripts/shoot-themes.mjs",
     "ui:shoot": "npm run build && node scripts/shoot-ui.mjs",

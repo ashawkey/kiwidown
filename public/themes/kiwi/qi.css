@@ -1,0 +1,62 @@
+/*
+ * Qi 漆 — Kiwidown's dark theme.
+ *
+ * 漆 is lacquer. Lacquer black is not black: it is a deep warm brown-black that shows its
+ * colour where the light catches it, and it is the ground cinnabar and gold were painted
+ * onto. So this page is a warm near-black rather than a neutral grey, and the text is a
+ * raw-silk off-white rather than pure white — which is also what makes a dark page
+ * comfortable to read for any length of time, since white on black glares.
+ *
+ * The hue is Su's vermilion lifted until it holds against a dark ground: still 朱, brighter
+ * because it has to be. It is used in exactly the same places, so switching between the two
+ * themes moves the material and not the design.
+ *
+ * Structure, type and spacing all live in kiwi.css. This file is the palette and nothing
+ * else — which is also why the two themes can never drift apart.
+ */
+
+@import '../../fonts/lxgw-wenkai/lxgw-wenkai.css';
+@import './kiwi.css';
+
+:root {
+  /*
+   * Says "this page is dark" to the browser itself, which is what makes it draw the parts
+   * we don't: the document scrollbar, and the empty checkbox on a task list — which
+   * otherwise arrives as a solid white square, since `accent-color` only reaches a
+   * checkbox once it is ticked. Pinned rather than left to the system so the page follows
+   * the theme, not the desktop. src/app/shell.css pins the chrome's own controls
+   * separately, and sits in a later layer, so this cannot reach them.
+   */
+  color-scheme: dark;
+
+  --kiwi-bg: #191512;
+
+  --kiwi-ink: #e3ddd1;
+  --kiwi-ink-strong: #f4efe4;
+  --kiwi-ink-soft: #a49b8b;
+  --kiwi-ink-faint: #7a7264;
+
+  --kiwi-rule: #322b23;
+  --kiwi-wash: #211c17;
+  --kiwi-wash-edge: #302921;
+
+  --kiwi-accent: #c96a4f;
+  --kiwi-accent-ink: #d4805f;
+  --kiwi-accent-wash: #43291f;
+
+  /* Dark selection works by lifting the ground, not by laying a colour over the text. */
+  --kiwi-select: #453227;
+
+  /*
+   * The same four hues as Su, lifted to hold against lacquer. Comments sit deliberately
+   * low — they are meant to recede — but not so low they stop being legible, which on this
+   * ground means staying above roughly 4:1.
+   */
+  --cm-comment: #857b6b;
+  --cm-keyword: #93aac9;
+  --cm-string: #9fb78b;
+  --cm-number: #d28d6c;
+  --cm-name: #ece6da;
+  --cm-punct: #938a7b;
+  --cm-error: #e0705c;
+}

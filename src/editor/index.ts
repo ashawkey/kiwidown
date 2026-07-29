@@ -2,6 +2,7 @@ import { defaultValueCtx, Editor, editorViewCtx, rootCtx, serializerCtx } from '
 import { clipboard } from '@milkdown/kit/plugin/clipboard'
 import { cursor } from '@milkdown/kit/plugin/cursor'
 import { history } from '@milkdown/kit/plugin/history'
+import { indent } from '@milkdown/kit/plugin/indent'
 import { listener, listenerCtx } from '@milkdown/kit/plugin/listener'
 import { trailing } from '@milkdown/kit/plugin/trailing'
 import { commonmark } from '@milkdown/kit/preset/commonmark'
@@ -84,6 +85,9 @@ export async function createEditor(options: EditorOptions): Promise<EditorHandle
     })
     .use(commonmark)
     .use(gfm)
+    // Keep Tab inside the editor. List/table shortcuts registered by the presets run first;
+    // elsewhere this inserts Milkdown's default two-space Markdown indentation.
+    .use(indent)
     .use(history)
     .use(clipboard)
     .use(cursor)

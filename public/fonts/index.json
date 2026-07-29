@@ -1,0 +1,14 @@
+{
+  "generated": "2026-07-29T05:27:27.749Z",
+  "families": {
+    "lxgw-wenkai": {
+      "fingerprint": "330cb739e7c532d9",
+      "files": 197,
+      "css": "lxgw-wenkai/lxgw-wenkai.css",
+      "name": "LXGW WenKai",
+      "license": "OFL-1.1",
+      "author": "LXGW",
+      "source": "https://github.com/lxgw/LxgwWenKai"
+    }
+  }
+}
