@@ -307,9 +307,9 @@ body {
 /* ── Tables ──────────────────────────────────────────────────────────────────────────── */
 
 /*
- * Ruled horizontally and never vertically: the columns are held apart by the space between
- * them, which is how a table is set in a book. base.css already collapses the borders and
- * gives the enclosing figure its own horizontal scroll.
+ * Fine rules form a quiet grid: horizontal lines keep the bookish rhythm, while equally
+ * light verticals make columns easy to trace without turning the table into a heavy box.
+ * base.css already collapses the borders and gives the enclosing figure its own scroll.
  */
 #write table {
   margin: 1.5rem 0;
@@ -322,6 +322,7 @@ body {
 #write table td {
   padding: 0.5em 0.85em;
   border: 0;
+  border-right: 1px solid var(--kiwi-rule);
   border-bottom: 1px solid var(--kiwi-rule);
   line-height: 1.6;
   text-align: left;
@@ -348,6 +349,7 @@ body {
 #write table th:last-child,
 #write table td:last-child {
   padding-right: 0;
+  border-right: 0;
 }
 
 /* ── Figures ─────────────────────────────────────────────────────────────────────────── */

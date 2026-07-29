@@ -151,7 +151,7 @@ body {
 /*
  * Tables become a pane too, which means the collapsed borders base.css sets have to go:
  * a collapsed table paints its cell borders over the pane's rounded corners. Separated
- * borders with no spacing draw the same single hairlines and stay inside the radius.
+ * borders with no spacing draw the same fine grid and stay inside the radius.
  */
 #write table {
   border-collapse: separate;
@@ -161,6 +161,7 @@ body {
 
 #write table th,
 #write table td {
+  border-right: 1px solid var(--lg-rim);
   border-bottom: 1px solid var(--lg-rim);
   /* Su and Qi pull the outer columns flush with the text; inside a pane they need the
      inset back, or the first character sits on the rim. */
