@@ -62,6 +62,7 @@ async function main(): Promise<void> {
   let viewMode: SourceMode | undefined
   const modeControl = {
     isSource: () => viewMode?.isSource ?? false,
+    insertTable: (rows: number, columns: number) => viewMode?.insertTable(rows, columns),
     toggle: () => viewMode?.toggle(),
   }
 

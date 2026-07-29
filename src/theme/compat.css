@@ -96,6 +96,23 @@
     pointer-events: none;
   }
 
+  /* prosemirror-tables turns a drag across cell boundaries into a rectangular cell
+     selection. Its headless plugin adds `.selectedCell`, but without these required
+     styles the browser hides its native range and gives no replacement feedback. */
+  .ProseMirror td.selectedCell,
+  .ProseMirror th.selectedCell {
+    position: relative;
+  }
+
+  .ProseMirror .selectedCell::after {
+    content: '';
+    position: absolute;
+    z-index: 2;
+    inset: 0;
+    background: rgb(120 170 255 / 28%);
+    pointer-events: none;
+  }
+
   /* Guard against themes' generic img rules breaking ProseMirror's layout helper. */
   img.ProseMirror-separator {
     display: inline !important;

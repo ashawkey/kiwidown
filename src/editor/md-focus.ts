@@ -25,10 +25,11 @@ const key = new PluginKey<FocusState>('TYPORA_MD_FOCUS')
 function build(state: EditorState, focused: boolean): DecorationSet {
   if (!focused) return DecorationSet.empty
 
-  const { $head, empty } = state.selection
-  // A range selection spanning blocks has no single focused block, which matches
-  // Typora: it drops the marker as soon as the selection stops being a caret.
-  if (!empty) return DecorationSet.empty
+  const { $anchor, $head, empty } = state.selection
+  // Keep the block focused while selecting within it. Dropping `.md-focus` on the first
+  // mouse movement hides math and diagram source mid-drag, which collapses the browser's
+  // selection. A range spanning blocks still has no single focused block.
+  if (!empty && !$anchor.sameParent($head)) return DecorationSet.empty
 
   const decorations: Decoration[] = []
   for (let depth = $head.depth; depth > 0; depth--) {

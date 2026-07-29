@@ -58,6 +58,7 @@ export interface SourceMode {
   replace: (markdown: string) => void
   swap: (next: DocumentState, previous?: DocumentState) => void
   forget: (id: string) => void
+  insertTable: (rows: number, columns: number) => void
   toggle: () => void
 }
 
@@ -71,8 +72,8 @@ export interface SourceModeOptions {
   onModeChange: () => void
 }
 
-/* CodeMirror-compatible names let the active Typora theme colour Markdown source too. */
-const sourceHighlight = HighlightStyle.define([
+/* Keep CodeMirror-compatible token names for DOM inspection and theme interoperability. */
+const sourceClasses = HighlightStyle.define([
   { tag: tags.heading, class: 'cm-header' },
   { tag: tags.quote, class: 'cm-quote' },
   { tag: tags.link, class: 'cm-link' },
@@ -87,6 +88,22 @@ const sourceHighlight = HighlightStyle.define([
   { tag: tags.bool, class: 'cm-atom' },
   { tag: tags.tagName, class: 'cm-tag' },
   { tag: tags.attributeName, class: 'cm-attribute' },
+])
+
+/* The Lezer Markdown grammar supplies these tags. CSS variables switch with the app's
+   light/dark signal without rebuilding the editor state. */
+const sourceColors = HighlightStyle.define([
+  { tag: tags.heading, color: 'var(--app-syntax-heading)', fontWeight: '600' },
+  { tag: tags.quote, color: 'var(--app-syntax-quote)', fontStyle: 'italic' },
+  { tag: [tags.link, tags.url], color: 'var(--app-syntax-link)' },
+  { tag: tags.strong, fontWeight: '700' },
+  { tag: tags.emphasis, fontStyle: 'italic' },
+  { tag: tags.monospace, color: 'var(--app-syntax-code)' },
+  { tag: [tags.processingInstruction, tags.contentSeparator], color: 'var(--app-syntax-markup)' },
+  { tag: tags.comment, color: 'var(--app-syntax-quote)' },
+  { tag: [tags.keyword, tags.tagName], color: 'var(--app-syntax-keyword)' },
+  { tag: [tags.string, tags.attributeName], color: 'var(--app-syntax-string)' },
+  { tag: [tags.number, tags.bool, tags.atom], color: 'var(--app-syntax-code)' },
 ])
 
 const sourceTheme = EditorView.theme({
@@ -104,7 +121,10 @@ const sourceTheme = EditorView.theme({
     fontVariantLigatures: 'none',
   },
   '.cm-content': {
+    flex: '0 0 auto',
+    width: 'max(var(--app-doc-width), min(100%, var(--app-doc-measure)))',
     minHeight: '100%',
+    marginInline: 'auto',
     padding: 'var(--app-source-padding)',
     caretColor: 'var(--app-fg)',
   },
@@ -144,7 +164,8 @@ export function createSourceMode(options: SourceModeOptions): SourceMode {
 
   const extensions = [
     sourceMarkdown.extension,
-    syntaxHighlighting(sourceHighlight),
+    syntaxHighlighting(sourceClasses),
+    syntaxHighlighting(sourceColors),
     history(),
     keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab]),
     EditorView.contentAttributes.of({
@@ -168,6 +189,25 @@ export function createSourceMode(options: SourceModeOptions): SourceMode {
 
   function markdownText(): string {
     return sourceView.state.doc.toString()
+  }
+
+  function insertSourceTable(rows: number, columns: number): void {
+    const selection = sourceView.state.selection.main
+    const before = sourceView.state.sliceDoc(0, selection.from)
+    const after = sourceView.state.sliceDoc(selection.to)
+    const emptyRow = `| ${Array(columns).fill('').join(' | ')} |`
+    const delimiter = `| ${Array(columns).fill('---').join(' | ')} |`
+    const table = [emptyRow, delimiter, ...Array(rows - 1).fill(emptyRow)].join('\n')
+    const leading = before.length === 0 ? '' : before.endsWith('\n\n') ? '' : before.endsWith('\n') ? '\n' : '\n\n'
+    const trailing = after.length === 0 ? '' : after.startsWith('\n\n') ? '' : after.startsWith('\n') ? '\n' : '\n\n'
+    const inserted = `${leading}${table}${trailing}`
+
+    sourceView.dispatch({
+      changes: { from: selection.from, to: selection.to, insert: inserted },
+      selection: { anchor: selection.from + leading.length + 2 },
+      scrollIntoView: true,
+    })
+    sourceView.focus()
   }
 
   function renderedKinds(doc: ProseNode): string[] {
@@ -352,6 +392,11 @@ export function createSourceMode(options: SourceModeOptions): SourceMode {
       retained.delete(id)
       renderedBaselines.delete(id)
       options.views.forget(id)
+    },
+
+    insertTable(rows, columns) {
+      if (source) insertSourceTable(rows, columns)
+      else options.editor.insertTable(rows, columns)
     },
 
     toggle() {

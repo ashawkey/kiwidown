@@ -85,10 +85,11 @@ function runAround(block: Node, contentStart: number, cursor: number, mark: Mark
 
 function build(state: EditorState, focused: boolean): DecorationSet {
   if (!focused) return DecorationSet.empty
-  const { $from, empty } = state.selection
-  // A range selection has no single "element the caret is in"; Typora drops the markers
-  // in the same situation.
-  if (!empty) return DecorationSet.empty
+  const { $anchor, $head, $from, empty } = state.selection
+  // A range has no single inline element to expand. A selection contained by one heading,
+  // however, must keep its `#` prefix: removing the widget on the first mouse movement
+  // shifts the text under the pointer and makes drag selection jump.
+  if (!empty && !$anchor.sameParent($head)) return DecorationSet.empty
 
   const decorations: Decoration[] = []
   const block = $from.parent
@@ -100,6 +101,12 @@ function build(state: EditorState, focused: boolean): DecorationSet {
   if (block.type.name === 'heading') {
     const level = Number(block.attrs['level']) || 1
     decorations.push(widget(contentStart, meta(`${'#'.repeat(level)} `), -1, `heading-${level}`))
+  }
+
+  // Keep only the block-level heading marker for a range. Inline mark delimiters still
+  // require a caret identifying which specific marked run is being edited.
+  if (!empty) {
+    return decorations.length ? DecorationSet.create(state.doc, decorations) : DecorationSet.empty
   }
 
   // `$from.marks()` is what the caret is "inside", which is exactly the set Typora expands.

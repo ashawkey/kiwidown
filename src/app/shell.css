@@ -33,6 +33,15 @@
     --app-border: #d1d9e0;
     --app-hover: #eff2f5;
 
+    /* Markdown source highlighting. */
+    --app-syntax-heading: #0550ae;
+    --app-syntax-link: #0969da;
+    --app-syntax-code: #8250df;
+    --app-syntax-quote: #57606a;
+    --app-syntax-markup: #6e7781;
+    --app-syntax-keyword: #cf222e;
+    --app-syntax-string: #116329;
+
     /*
      * Liquid Glass.
      *
@@ -66,6 +75,14 @@
     --app-bg: #16191d;
     --app-border: #3d444d;
     --app-hover: #262c34;
+
+    --app-syntax-heading: #79c0ff;
+    --app-syntax-link: #58a6ff;
+    --app-syntax-code: #d2a8ff;
+    --app-syntax-quote: #8b949e;
+    --app-syntax-markup: #8b949e;
+    --app-syntax-keyword: #ff7b72;
+    --app-syntax-string: #7ee787;
 
     /* Dark glass is a darker tint with a dimmer highlight — the specular edge is what
        reads as "glass", so it stays, just quieter. */
@@ -282,6 +299,122 @@
     background: var(--glass-control-hover);
   }
 
+  /* The table-size prompt is application chrome, so it uses the same Liquid Glass stack
+     as the bar rather than taking any colour, type, or control styling from the theme. */
+  .app-table-dialog {
+    width: min(360px, calc(100vw - 32px));
+    padding: 0;
+    overflow: hidden;
+    color: var(--app-fg);
+    background: var(--glass-tint);
+    border: 1px solid var(--glass-rim);
+    border-radius: 18px;
+    box-shadow:
+      inset 0 1px 0 var(--glass-edge),
+      0 24px 70px -24px rgb(0 0 0 / 55%);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    font: 13px/1.4 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    user-select: text;
+  }
+
+  .app-table-dialog::backdrop {
+    background: rgb(0 0 0 / 24%);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+
+  .app-table-dialog__form {
+    display: grid;
+    gap: 18px;
+    padding: 22px;
+  }
+
+  .app-table-dialog h2,
+  .app-table-dialog p {
+    margin: 0;
+    color: inherit;
+    font-family: inherit;
+  }
+
+  .app-table-dialog h2 {
+    font-size: 18px;
+    font-weight: 650;
+    line-height: 1.25;
+  }
+
+  .app-table-dialog p.app-table-dialog__hint {
+    margin-top: -10px;
+    color: var(--app-fg-dim);
+  }
+
+  .app-table-dialog__dimensions {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: end;
+    gap: 12px;
+  }
+
+  .app-table-dialog__dimension {
+    display: grid;
+    gap: 6px;
+    color: var(--app-fg-dim);
+    font-weight: 500;
+  }
+
+  .app-table-dialog__dimension input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px 10px;
+    color: var(--app-fg);
+    background: var(--glass-control);
+    border: 1px solid transparent;
+    border-radius: 9px;
+    box-shadow:
+      inset 0 0 0 1px var(--glass-control-edge),
+      inset 0 1px 0 var(--glass-control-sheen);
+    font: inherit;
+    font-size: 15px;
+    color-scheme: light;
+  }
+
+  :root[data-theme-dark='true'] .app-table-dialog__dimension input {
+    color-scheme: dark;
+  }
+
+  .app-table-dialog__dimension input:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 1px;
+  }
+
+  .app-table-dialog__times {
+    padding-bottom: 8px;
+    color: var(--app-fg-dim);
+    font-size: 18px;
+  }
+
+  .app-table-dialog__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
+  .app-table-dialog .app-button.is-primary {
+    background: var(--glass-control-hover);
+    box-shadow:
+      inset 0 0 0 1px var(--glass-control-edge),
+      inset 0 1px 0 var(--glass-control-sheen),
+      0 0 0 1px color-mix(in srgb, var(--app-fg) 28%, transparent);
+    font-weight: 600;
+  }
+
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .app-table-dialog {
+      background: var(--app-bg);
+      border-color: var(--app-border);
+    }
+  }
+
   /*
    * The document tabs.
    *
@@ -482,9 +615,8 @@
 
   .app-source__surface {
     position: relative;
-    width: max(var(--app-doc-width), min(100%, var(--app-doc-measure)));
+    width: 100%;
     height: 100%;
-    margin-inline: auto;
   }
 
   @media (max-width: 600px) {

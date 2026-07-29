@@ -6,8 +6,8 @@ import { indent } from '@milkdown/kit/plugin/indent'
 import { listener, listenerCtx } from '@milkdown/kit/plugin/listener'
 import { trailing } from '@milkdown/kit/plugin/trailing'
 import { commonmark } from '@milkdown/kit/preset/commonmark'
-import { gfm, remarkGFMPlugin } from '@milkdown/kit/preset/gfm'
-import { replaceAll } from '@milkdown/kit/utils'
+import { gfm, insertTableCommand, remarkGFMPlugin } from '@milkdown/kit/preset/gfm'
+import { callCommand, replaceAll } from '@milkdown/kit/utils'
 import type { EditorState } from '@milkdown/kit/prose/state'
 import type { EditorView } from '@milkdown/kit/prose/view'
 
@@ -29,6 +29,8 @@ export interface EditorHandle {
   getMarkdown: () => string
   /** Replace the whole document, discarding undo history. */
   setMarkdown: (markdown: string) => void
+  /** Insert an empty GFM table at the current selection. */
+  insertTable: (rows: number, columns: number) => void
   /** Run `fn` with the live ProseMirror view. */
   withView: (fn: (view: EditorView) => void) => void
   /** Snapshot the editor: document, selection and undo history. */
@@ -122,6 +124,10 @@ export async function createEditor(options: EditorOptions): Promise<EditorHandle
       // which is what we want when opening a different file: undo shouldn't be able to
       // walk backwards into the previous document's content.
       editor.action(replaceAll(markdown, true))
+    },
+    insertTable: (rows, columns) => {
+      editor.action(callCommand(insertTableCommand.key, { row: rows, col: columns }))
+      editor.action((ctx) => ctx.get(editorViewCtx).focus())
     },
     withView: (fn) => {
       editor.action((ctx) => fn(ctx.get(editorViewCtx)))

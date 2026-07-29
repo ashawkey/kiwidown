@@ -3,6 +3,7 @@ import { Download, Eye, EyeOff, FilePlus, FolderOpen, Save, X } from 'lucide'
 import type { DocumentState, DocumentStore } from '../doc'
 import { supportsFileSystemAccess } from '../doc'
 import { icon, iconButton } from './icon'
+import { createTableInsert } from './table-insert'
 import { toast } from './toast'
 
 /**
@@ -20,6 +21,7 @@ import { toast } from './toast'
  */
 export interface ViewModeControl {
   isSource: () => boolean
+  insertTable: (rows: number, columns: number) => void
   toggle: () => void
 }
 
@@ -182,9 +184,10 @@ export function createDocumentBar(store: DocumentStore, viewMode: ViewModeContro
   const sourceButton = iconButton(Eye, 'Show Markdown source', () => viewMode.toggle(), {
     shortcut: 'Ctrl+/',
   })
+  const tableInsert = createTableInsert(({ rows, columns }) => viewMode.insertTable(rows, columns))
 
-  group.append(newButton, openButton, saveButton, sourceButton)
-  wrap.append(strip, group)
+  group.append(newButton, openButton, saveButton, tableInsert.button, sourceButton)
+  wrap.append(strip, group, tableInsert.dialog)
 
   let shown: string | undefined
 

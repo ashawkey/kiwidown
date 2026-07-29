@@ -244,6 +244,30 @@ async function run(browser) {
     return ok
   }
 
+  /** Drag across a few characters in the textblock containing the current selection. */
+  const dragWithinCurrentTextblock = async () => {
+    const points = await page.evaluate(() => {
+      let result
+      window.__kiwidown.withView((view) => {
+        const { $head } = view.state.selection
+        const start = $head.start()
+        const from = Math.min(start + 1, $head.end())
+        const to = Math.min(from + 5, $head.end())
+        const a = view.coordsAtPos(from)
+        const b = view.coordsAtPos(to)
+        result = {
+          from: { x: a.left, y: (a.top + a.bottom) / 2 },
+          to: { x: b.left, y: (b.top + b.bottom) / 2 },
+        }
+      })
+      return result
+    })
+    await page.mouse.move(points.from.x, points.from.y)
+    await page.mouse.down()
+    await page.mouse.move(points.to.x, points.to.y, { steps: 5 })
+    await page.mouse.up()
+  }
+
   for (const r of results) {
     const need = r.min ?? 1
     const ok = tally(r.found >= need)
@@ -252,6 +276,43 @@ async function run(browser) {
     )
     if (!ok && r.why) console.log(`        -> ${r.why}`)
   }
+
+  // prosemirror-tables uses a rectangular CellSelection when a drag crosses cell
+  // boundaries. Its CSS is the only visible feedback because the native range is hidden.
+  const tablePoints = await page.evaluate(() => {
+    document.querySelector('#write table').scrollIntoView({ block: 'center' })
+    const cells = document.querySelectorAll('#write table th')
+    const from = cells[0].getBoundingClientRect()
+    const to = cells[cells.length - 1].getBoundingClientRect()
+    return {
+      from: { x: from.left + from.width / 2, y: from.top + from.height / 2 },
+      to: { x: to.left + to.width / 2, y: to.top + to.height / 2 },
+    }
+  })
+  await page.mouse.move(tablePoints.from.x, tablePoints.from.y)
+  await page.mouse.down()
+  await page.mouse.move(tablePoints.to.x, tablePoints.to.y, { steps: 5 })
+  await page.mouse.up()
+  const tableDrag = await settled(page, () => {
+    let cellSelection = false
+    window.__kiwidown.withView((view) => {
+      cellSelection = '$anchorCell' in view.state.selection
+    })
+    const selected = [...document.querySelectorAll('#write table .selectedCell')]
+    const overlay = selected[0] ? getComputedStyle(selected[0], '::after') : undefined
+    return {
+      cellSelection,
+      crossedCells: selected.length >= 2,
+      visible:
+        overlay?.content !== 'none' &&
+        overlay?.backgroundColor !== 'rgba(0, 0, 0, 0)' &&
+        overlay?.pointerEvents === 'none',
+    }
+  })
+  const tableDragOk = Object.values(tableDrag).every(Boolean)
+  tally(tableDragOk)
+  console.log(`  ${tableDragOk ? 'PASS' : 'FAIL'}  ${'table drag visibly selects cells'.padEnd(38)}`)
+  if (!tableDragOk) console.log(`        -> ${JSON.stringify(tableDrag)}`)
 
   // .md-focus is selection-driven, so it needs the editor focused to be observable.
   await page.click('#write > h1')
@@ -266,6 +327,30 @@ async function run(browser) {
     `  ${focusOk ? 'PASS' : 'FAIL'}  ${'.md-focus follows the caret'.padEnd(38)} ${String(focus.onHeading).padStart(3)}/1  #write > h1.md-focus`
   )
   if (!focusOk) console.log('        -> .md-focus is what themes hang their editing affordances off')
+
+  // The generated `#` occupies real width. It must stay mounted while dragging within
+  // the heading, otherwise the text moves under the pointer as soon as a range appears.
+  await dragWithinCurrentTextblock()
+  const headingDrag = await settled(page, () => {
+    let selected = false
+    window.__kiwidown.withView((view) => {
+      const { $anchor, $head, empty } = view.state.selection
+      selected = !empty && $anchor.sameParent($head) && $head.parent.type.name === 'heading'
+    })
+    const markers = [...document.querySelectorAll('#write > h1 > .md-meta')]
+    return {
+      selected,
+      focused: document.querySelector('#write > h1')?.classList.contains('md-focus') ?? false,
+      markerKept:
+        markers.length === 1 &&
+        markers[0].textContent === '# ' &&
+        getComputedStyle(markers[0]).display !== 'none',
+    }
+  })
+  const headingDragOk = Object.values(headingDrag).every(Boolean)
+  tally(headingDragOk)
+  console.log(`  ${headingDragOk ? 'PASS' : 'FAIL'}  ${'heading marker stays during drag'.padEnd(38)}`)
+  if (!headingDragOk) console.log(`        -> ${JSON.stringify(headingDrag)}`)
 
   // A TOC entry has to point at a heading that exists. The ids come from Milkdown's
   // headingIdGenerator rather than from `heading.attrs.id`, which is empty for anything
@@ -458,6 +543,28 @@ async function run(browser) {
   tally(diagramEditOk)
   console.log(`  ${diagramEditOk ? 'PASS' : 'FAIL'}  ${'diagram preview opens its source'.padEnd(38)}`)
   if (!diagramEditOk) console.log(`        -> ${JSON.stringify(diagramEdit)}`)
+
+  // A range selection must keep the source open for the duration of a mouse drag. Hiding
+  // it on the first movement makes the DOM selection disappear before mouseup.
+  await dragWithinCurrentTextblock()
+  const diagramDrag = await settled(page, () => {
+    let selected = false
+    window.__kiwidown.withView((view) => {
+      const { $anchor, $head, empty } = view.state.selection
+      selected = !empty && $anchor.sameParent($head) && $head.parent.type.name === 'code_block'
+    })
+    const fence = document.querySelector('#write pre.md-diagram')
+    const code = fence?.querySelector(':scope > code')
+    return {
+      selected,
+      focused: fence?.classList.contains('md-focus') ?? false,
+      sourceVisible: Boolean(code) && getComputedStyle(code).display !== 'none',
+    }
+  })
+  const diagramDragOk = Object.values(diagramDrag).every(Boolean)
+  tally(diagramDragOk)
+  console.log(`  ${diagramDragOk ? 'PASS' : 'FAIL'}  ${'diagram source supports drag selection'.padEnd(38)}`)
+  if (!diagramDragOk) console.log(`        -> ${JSON.stringify(diagramDrag)}`)
 
   // Mermaid measures labels while rendering. Changing to a wider theme font must rebuild
   // that geometry, otherwise labels overflow their foreignObject and lose their last glyph.
@@ -662,6 +769,27 @@ async function run(browser) {
     languageChipHidden: !document.querySelector('#write .code-tooltip')?.checkVisibility(),
     exact: window.__kiwidown.getMarkdown() === '# source\n\n**raw edit**\n',
     highlighted: Boolean(document.querySelector('.app-source .cm-header')),
+    scrollbarAtEdge:
+      Math.abs(
+        document.querySelector('.app-source .cm-scroller')?.getBoundingClientRect().right -
+          window.innerWidth
+      ) < 1,
+    lightAndDarkHighlight: (() => {
+      const root = document.documentElement
+      const token = document.querySelector('.app-source .cm-header')
+      const editor = document.querySelector('.app-source .cm-editor')
+      if (!token || !editor) return false
+      const original = root.dataset.themeDark
+      root.dataset.themeDark = 'false'
+      const light = getComputedStyle(token).color
+      const lightBase = getComputedStyle(editor).color
+      root.dataset.themeDark = 'true'
+      const dark = getComputedStyle(token).color
+      const darkBase = getComputedStyle(editor).color
+      if (original == null) delete root.dataset.themeDark
+      else root.dataset.themeDark = original
+      return light !== lightBase && dark !== darkBase && light !== dark
+    })(),
     pressed:
       document.querySelector('button[aria-label^="Show rendered view"]')?.getAttribute('aria-pressed') ===
       'true',
@@ -871,6 +999,23 @@ async function run(browser) {
       'none',
   }))
   record('formula source follows the caret', { ...mathAway, ...mathBack })
+
+  await dragWithinCurrentTextblock()
+  const mathDrag = await settled(page, () => {
+    let selected = false
+    window.__kiwidown.withView((view) => {
+      const { $anchor, $head, empty } = view.state.selection
+      selected = !empty && $anchor.sameParent($head) && $head.parent.type.name === 'math_block'
+    })
+    const block = document.querySelector('#write .md-math-block')
+    const source = block?.querySelector(':scope > .md-rawblock-input')
+    return {
+      selected,
+      focused: block?.classList.contains('md-focus') ?? false,
+      sourceVisible: Boolean(source) && getComputedStyle(source).display !== 'none',
+    }
+  })
+  record('formula source supports drag selection', mathDrag)
 
   // Inline maths, and the caret-eating hazard behind it: `^` closes a superscript before
   // the formula closes, so the rule has to reconstruct its own source.
