@@ -32,6 +32,15 @@
   --lg-blur: saturate(170%) blur(26px);
   --lg-blur-inner: saturate(205%) blur(10px);
 
+  /* Glass, cut rather than moulded. Su and Qi can afford the material's soft default radii;
+     under justified Times with numbered sections, that much curvature reads as an app window
+     wrapped around a paper, so every corner is taken to about half. Enough to say the panes
+     are glass, not enough to argue with the type. */
+  --lg-radius-sheet: 14px;
+  --lg-radius-pane: 8px;
+  --lg-radius-inner: 8px;
+  --lg-radius-chip: 3px;
+
   /* A near-paper fallback for browsers without backdrop filtering. */
   --kiwi-bg: #f1f2ec;
 
@@ -58,4 +67,53 @@
   --cm-name: #20241e;
   --cm-punct: #676e64;
   --cm-error: #9d3027;
+}
+
+/* ── The paper table, glazed ─────────────────────────────────────────────────────────── */
+
+/*
+ * Ye's table is a booktabs figure: heavy strokes above and below, a fine grid inside, and
+ * open sides. The three horizontal rules are what hold it together, which is exactly why
+ * there is no box — an outline would restate the structure in a weaker voice and turn the
+ * figure into a card. glassy.css makes every block a rounded, outlined pane, so applied to
+ * Ye it produces the one shape this table is designed not to be.
+ *
+ * The resolution is to keep the glass and refuse the frame. The pane's fill, its inner
+ * blur and the specular hairline all stay — the table is still a slab of glass, and the
+ * saturation inside it still differs from the sheet around it — but the rim and the radius
+ * go, and the two ink rules come back to close it top and bottom. The hairline now lands
+ * directly beneath the top rule, where light would catch the cut edge of the slab.
+ */
+#write table {
+  border: 0;
+  border-top: 2px solid var(--kiwi-ink-strong);
+  border-bottom: 2px solid var(--kiwi-ink-strong);
+  border-radius: 0;
+}
+
+/* Ye's manuscript density, with slightly more horizontal inset than paper needed: the fill
+   reaches the outer columns now, and flush glyphs would sit on its edge. */
+#write table th,
+#write table td {
+  padding: 0.32em 0.7em;
+  border-right: 1px solid var(--kiwi-rule);
+  border-bottom: 1px solid var(--kiwi-rule);
+}
+
+#write table th:first-child,
+#write table td:first-child {
+  padding-left: 0.7em;
+}
+
+#write table th:last-child,
+#write table td:last-child {
+  padding-right: 0.7em;
+}
+
+/* The header rule is the third of the three strokes, so it stays heavier than the grid and
+   the row keeps paper's transparency: a shaded band is how a UI renders a table, not how a
+   paper sets one. */
+#write table th {
+  border-bottom: 1.5px solid var(--kiwi-ink-soft);
+  background: transparent;
 }
