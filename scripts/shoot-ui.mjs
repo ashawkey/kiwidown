@@ -18,6 +18,11 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const OUT = join(ROOT, 'test', 'shots-ui')
 const PORT = 4176
 
+async function selectTheme(page, id) {
+  await page.locator('#theme-select').click()
+  await page.locator(`.app-theme-option[data-theme-id="${id}"]`).click()
+}
+
 /*
  * Which themes to shoot, resolved against the vendored set before anything starts — so a
  * name that no longer exists fails here and now, rather than as a fifteen-second wait for a
@@ -67,7 +72,7 @@ await page.goto(`http://localhost:${PORT}/`, { waitUntil: 'networkidle' })
 await page.waitForSelector('[data-app-ready="true"] #write')
 
 for (const theme of themes) {
-  await page.selectOption('#theme-select', theme.id)
+  await selectTheme(page, theme.id)
   // Matched on the theme's own path, not on part of its name: several themes in a pack
   // share a prefix, so a looser test resolves against the sheet that is already loaded.
   await page.waitForFunction(

@@ -1,5 +1,6 @@
 import './app/shell.css'
 import { bindDocumentShortcuts, bindFileDrop, bindUnloadGuard, createDocumentBar } from './app/document-bar'
+import { createDisplayControls } from './app/display-controls'
 import { createSourceMode, type SourceMode } from './app/source-mode'
 import { createThemePicker } from './app/theme-picker'
 import { askToast, reportError } from './app/toast'
@@ -49,7 +50,8 @@ async function main(): Promise<void> {
 
   installBaseLayer()
   await loadThemeIndex()
-  const picker = createThemePicker()
+  let displayControls: ReturnType<typeof createDisplayControls> | undefined
+  const picker = createThemePicker((theme) => void displayControls?.refreshForTheme(theme.href))
   app.append(bar, stage)
   await picker.select(initialThemeId())
 
@@ -91,6 +93,9 @@ async function main(): Promise<void> {
       if (!viewMode?.isSource) store.noteEdit()
     },
   })
+  displayControls = createDisplayControls()
+  bar.insertBefore(displayControls.element, picker.element)
+
   // Everything above only ever runs before the first user action, so nothing has asked to
   // switch or replace a document yet; from here on both go through the active editor mode.
   views = createDocumentViews(editor, content)

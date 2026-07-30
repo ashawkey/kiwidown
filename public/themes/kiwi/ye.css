@@ -1,0 +1,327 @@
+/*
+ * Ye 叶 — Kiwidown's academic paper theme.
+ *
+ * 叶 means both a leaf and a page: warm stock, carbon ink, and a restrained scholarly
+ * green used only for navigation and editing affordances. The typography follows the
+ * visual grammar of a conference paper rather than imitating TeX's UI: a centred title,
+ * numbered left-aligned sections, compact justified prose, square figures and rules, and
+ * dense tables whose heavy top and bottom strokes anchor a fine internal grid.
+ *
+ * The contract-complete foundation comes from kiwi.css. This file changes its material,
+ * typography and paper-specific structure while retaining coverage for every Typora node.
+ */
+
+@import './kiwi.css';
+
+:root {
+  color-scheme: light;
+
+  --kiwi-bg: #fbfbf7;
+  --kiwi-ink: #252722;
+  --kiwi-ink-strong: #11130f;
+  --kiwi-ink-soft: #5f635b;
+  --kiwi-ink-faint: #8b9086;
+
+  --kiwi-rule: #b8bdb3;
+  --kiwi-wash: #f1f3ed;
+  --kiwi-wash-edge: #d4d8cf;
+
+  --kiwi-accent: #3e725f;
+  --kiwi-accent-ink: #2d604e;
+  --kiwi-accent-wash: #dce9e2;
+  --kiwi-select: #d4e6dd;
+
+  --kiwi-body: 'Times New Roman', Times, 'Noto Serif CJK SC', 'Source Han Serif SC', 'Songti SC',
+    STSong, SimSun, serif;
+  --monospace: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+
+  --cm-comment: #777d73;
+  --cm-keyword: #365c85;
+  --cm-string: #557044;
+  --cm-number: #8a5739;
+  --cm-name: #262822;
+  --cm-punct: #686d64;
+  --cm-error: #9f3027;
+}
+
+html {
+  background: var(--kiwi-bg);
+}
+
+#write {
+  counter-reset: ye-section ye-subsection;
+  padding: 3.25rem 2.75rem 8rem;
+  font-family: var(--kiwi-body);
+  font-size: 1rem;
+  font-variant-numeric: lining-nums tabular-nums;
+  line-height: 1.58;
+  text-align: justify;
+  text-rendering: optimizeLegibility;
+  hyphens: auto;
+}
+
+/* ── Paper hierarchy ─────────────────────────────────────────────────────────────── */
+
+#write h1,
+#write h2,
+#write h3,
+#write h4,
+#write h5,
+#write h6 {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--kiwi-ink-strong);
+  font-family: var(--kiwi-body);
+  font-weight: 700;
+  letter-spacing: 0;
+  text-align: left;
+  break-after: avoid-page;
+}
+
+#write h1 {
+  counter-reset: ye-section ye-subsection;
+  margin: 2rem auto 2.25rem;
+  max-width: 90%;
+  font-size: 2.05rem;
+  line-height: 1.15;
+  text-align: center;
+  text-wrap: balance;
+}
+
+#write h2 {
+  counter-increment: ye-section;
+  counter-reset: ye-subsection;
+  margin: 2.1rem 0 0.65rem;
+  font-size: 1.25rem;
+  line-height: 1.25;
+}
+
+#write h2::before {
+  content: counter(ye-section) '\2002';
+}
+
+#write h3 {
+  counter-increment: ye-subsection;
+  margin: 1.55rem 0 0.5rem;
+  font-size: 1.075rem;
+  line-height: 1.3;
+}
+
+#write h3::before {
+  content: counter(ye-section) '.' counter(ye-subsection) '\2002';
+}
+
+#write h4 {
+  margin: 1.35rem 0 0.4rem;
+  font-size: 1rem;
+  font-style: italic;
+  line-height: 1.35;
+}
+
+#write h5 {
+  margin: 1.2rem 0 0.35rem;
+  font-size: 0.94rem;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+}
+
+#write h6 {
+  margin: 1.1rem 0 0.35rem;
+  color: var(--kiwi-ink-soft);
+  font-size: 0.9rem;
+  font-style: italic;
+}
+
+#write p {
+  margin: 0.72rem 0;
+}
+
+#write strong,
+#write b {
+  color: var(--kiwi-ink-strong);
+}
+
+#write a {
+  color: var(--kiwi-accent-ink);
+  text-decoration-thickness: 0.75px;
+  text-decoration-color: color-mix(in srgb, var(--kiwi-accent-ink) 45%, transparent);
+  text-underline-offset: 0.14em;
+}
+
+#write mark {
+  padding: 0 0.12em;
+  border-radius: 0;
+}
+
+/* ── Compact manuscript blocks ──────────────────────────────────────────────────── */
+
+#write ul,
+#write ol {
+  margin: 0.7rem 0;
+  padding-left: 1.45rem;
+}
+
+#write li {
+  margin: 0.12rem 0;
+}
+
+#write li > ul,
+#write li > ol {
+  margin: 0.15rem 0;
+}
+
+#write blockquote {
+  margin: 1rem 1.5rem;
+  padding: 0.15rem 0 0.15rem 0.9rem;
+  border-left: 2px solid var(--kiwi-accent);
+  color: var(--kiwi-ink-soft);
+  font-size: 0.95em;
+}
+
+#write hr,
+#write .md-hr {
+  width: 38%;
+  height: 1px;
+  margin: 2rem auto;
+  background: var(--kiwi-ink-faint);
+}
+
+/* A paper table: internal grid, open sides, and bookending rules with extra weight. */
+#write table {
+  width: max-content;
+  min-width: min(24rem, calc(100% - 2rem));
+  max-width: calc(100% - 2rem);
+  margin: 1.25rem auto;
+  border-top: 2px solid var(--kiwi-ink-strong);
+  border-bottom: 2px solid var(--kiwi-ink-strong);
+  background: transparent;
+  font-size: 0.88em;
+  line-height: 1.35;
+  text-align: left;
+}
+
+#write table th,
+#write table td {
+  min-width: 5.5rem;
+  padding: 0.3em 0.55em;
+  border: 0;
+  border-right: 1px solid var(--kiwi-rule);
+  border-bottom: 1px solid var(--kiwi-rule);
+  line-height: 1.35;
+  text-align: left;
+  vertical-align: middle;
+}
+
+#write table th {
+  border-bottom: 1.5px solid var(--kiwi-ink-soft);
+  background: transparent;
+  color: var(--kiwi-ink-strong);
+  font-weight: 700;
+}
+
+#write table tr > :first-child {
+  padding-left: 0.55em;
+}
+
+#write table tr > :last-child {
+  padding-right: 0.55em;
+  border-right: 0;
+}
+
+#write table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+#write img {
+  border-radius: 0;
+}
+
+/* ── Technical matter ───────────────────────────────────────────────────────────── */
+
+#write code {
+  padding: 0.08em 0.28em;
+  border-radius: 0;
+  color: var(--kiwi-accent-ink);
+  font-size: 0.82em;
+}
+
+#write .md-fences {
+  margin: 1rem 0;
+  padding: 0.75rem 0.9rem 0.9rem;
+  border-color: var(--kiwi-wash-edge);
+  border-radius: 0;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  text-align: left;
+}
+
+#write pre.md-meta-block {
+  margin: 0 0 1.6rem;
+  padding: 0.65rem 0.85rem;
+  border: solid var(--kiwi-rule);
+  border-width: 1px 0;
+  border-radius: 0;
+  background: transparent;
+  font-size: 0.76rem;
+  line-height: 1.5;
+  text-align: left;
+}
+
+#write .md-toc {
+  margin: 1.25rem 0;
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--kiwi-rule);
+  border-radius: 0;
+  background: transparent;
+  font-size: 0.9rem;
+  text-align: left;
+}
+
+#write .md-toc-content {
+  line-height: 1.55;
+}
+
+#write sup.md-footnote {
+  padding: 0 0.08em;
+  color: var(--kiwi-accent-ink);
+}
+
+#write .footnotes,
+#write .md-def-footnote {
+  font-size: 0.84rem;
+  line-height: 1.45;
+  text-align: left;
+}
+
+#write .md-def-name {
+  color: var(--kiwi-ink-strong);
+}
+
+#write .md-math-block {
+  margin: 1.2rem 0;
+  text-align: center;
+}
+
+#write .md-fences.md-diagram {
+  padding: 1rem;
+  border-color: var(--kiwi-rule);
+  background: transparent;
+}
+
+@media print {
+  html,
+  body {
+    background: #ffffff;
+  }
+
+  #write {
+    padding: 0;
+    color: #000000;
+  }
+
+  #write a {
+    color: inherit;
+    text-decoration-color: currentColor;
+  }
+}

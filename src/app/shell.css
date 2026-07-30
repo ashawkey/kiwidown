@@ -52,6 +52,7 @@
      * tint shifts as the page moves.
      */
     --glass-tint: rgb(255 255 255 / 62%);
+    --glass-panel: rgb(255 255 255 / 78%);
     --glass-edge: rgb(255 255 255 / 70%);
     --glass-rim: rgb(0 0 0 / 8%);
     --glass-shadow: 0 10px 30px -14px rgb(0 0 0 / 30%);
@@ -87,6 +88,7 @@
     /* Dark glass is a darker tint with a dimmer highlight — the specular edge is what
        reads as "glass", so it stays, just quieter. */
     --glass-tint: rgb(22 25 29 / 58%);
+    --glass-panel: rgb(22 25 29 / 78%);
     --glass-edge: rgb(255 255 255 / 16%);
     --glass-rim: rgb(0 0 0 / 45%);
     --glass-shadow: 0 10px 30px -14px rgb(0 0 0 / 60%);
@@ -169,8 +171,17 @@
     white-space: nowrap;
   }
 
+  .app-theme-picker {
+    display: contents;
+  }
+
+  .app-theme-control {
+    position: relative;
+    flex: none;
+  }
+
   /* Controls are the same material as the bar, one layer up: lighter tint, brighter edge. */
-  .app-bar select,
+  .app-theme-trigger,
   .app-button {
     background: var(--glass-control);
     color: var(--app-fg);
@@ -186,54 +197,132 @@
       transform 140ms ease;
   }
 
-  .app-bar select {
-    /* Sized to its content: a fixed width leaves a short theme name floating next to a
-       far-away chevron. */
+  .app-theme-trigger {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     width: auto;
     max-width: 220px;
-    padding: 5px 8px;
+    padding: 5px 9px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .app-theme-trigger__value {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .app-theme-trigger__chevron {
+    flex: none;
+    width: 6px;
+    height: 6px;
+    margin: -3px 1px 0 2px;
+    border-right: 1.5px solid currentColor;
+    border-bottom: 1.5px solid currentColor;
+    transform: rotate(45deg);
+    transition: transform 140ms ease;
+  }
+
+  .app-theme-trigger[aria-expanded='true'] .app-theme-trigger__chevron {
+    margin-top: 3px;
+    transform: rotate(225deg);
+  }
+
+  /* A native select's popup is platform chrome and cannot carry the Liquid Glass
+     material. This list is application chrome instead: the same blur, tint, rim and
+     specular edge as the bar, with a slightly denser tint to keep text legible. */
+  .app-theme-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    z-index: 1;
+    width: min(256px, calc(100vw - 16px));
+    max-height: min(480px, calc(100vh - var(--app-bar-h) - 12px));
+    padding: 6px;
+    box-sizing: border-box;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    color: var(--app-fg);
+    background: var(--glass-panel);
+    border: 1px solid var(--glass-rim);
+    border-radius: 14px;
+    box-shadow:
+      inset 0 1px 0 var(--glass-edge),
+      0 18px 44px -18px rgb(0 0 0 / 48%);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    scrollbar-color: var(--glass-control-edge) transparent;
+  }
+
+  .app-theme-menu[hidden] {
+    display: none;
+  }
+
+  .app-theme-menu__group + .app-theme-menu__group {
+    margin-top: 5px;
+    padding-top: 5px;
+    border-top: 1px solid var(--glass-control-edge);
+  }
+
+  .app-theme-menu__heading {
+    padding: 4px 10px 3px;
+    color: var(--app-fg-dim);
+    font-size: 11px;
+    font-weight: 650;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .app-theme-option {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 14px;
+    gap: 8px;
+    align-items: center;
+    width: 100%;
+    padding: 7px 9px;
+    color: var(--app-fg);
+    background: transparent;
+    border: 0;
+    border-radius: 8px;
+    font: inherit;
+    text-align: left;
     cursor: pointer;
   }
 
-  /*
-   * The dropdown list is drawn by the browser, not by us, and it does not get the bar's
-   * material: --glass-control is a translucent white, so under a dark theme the popup
-   * composited that 8% fill over the platform's own white list and left the near-white
-   * --app-fg text sitting on near-white.
-   *
-   * `color-scheme` is what tells the browser to draw the popup — and its scrollbar and
-   * selection highlight — in dark chrome. It is set on the control rather than on :root
-   * so it cannot change the page canvas or the document scrollbar, both of which belong
-   * to the theme. It is pinned in *both* directions on purpose: the list should follow
-   * the active theme, not the operating system, so a light theme keeps a light list on a
-   * dark desktop.
-   *
-   * The explicit option colours are for the browsers that paint author styles into the
-   * list rather than deriving it from color-scheme; they have to be opaque, since there
-   * is nothing behind a popup to blend with.
-   */
-  .app-bar select {
-    color-scheme: light;
-  }
-
-  :root[data-theme-dark='true'] .app-bar select {
-    color-scheme: dark;
-  }
-
-  .app-bar select option {
-    background-color: var(--app-bg);
-    color: var(--app-fg);
-  }
-
-  /* The pack names dividing the list — dimmer than the themes under them, as a heading. */
-  .app-bar select optgroup {
-    background-color: var(--app-bg);
+  .app-theme-option::after {
+    content: '✓';
+    opacity: 0;
     color: var(--app-fg-dim);
+    text-align: center;
   }
 
-  .app-bar select:hover,
+  .app-theme-option:hover,
+  .app-theme-option:focus-visible {
+    background: var(--glass-control-hover);
+    outline: none;
+  }
+
+  .app-theme-option[aria-selected='true'] {
+    background: var(--glass-control);
+    font-weight: 600;
+  }
+
+  .app-theme-option[aria-selected='true']::after {
+    opacity: 1;
+  }
+
+  .app-theme-trigger:hover,
   .app-button:hover {
     background: var(--glass-control-hover);
+  }
+
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .app-theme-menu {
+      background: var(--app-bg);
+      border-color: var(--app-border);
+    }
   }
 
   .app-button {
@@ -252,7 +341,7 @@
   }
 
   .app-button:focus-visible,
-  .app-bar select:focus-visible {
+  .app-theme-trigger:focus-visible {
     outline: 2px solid currentColor;
     outline-offset: 1px;
   }
@@ -297,6 +386,75 @@
 
   .app-button-group .app-button:hover {
     background: var(--glass-control-hover);
+  }
+
+  /* Theme-independent document sizing. Native selects keep the discrete choices keyboard
+     accessible; their compact glass shells leave the tab strip most of the toolbar. */
+  .app-display-controls {
+    display: flex;
+    gap: 6px;
+    flex: none;
+  }
+
+  .app-display-control {
+    position: relative;
+    display: flex;
+    align-items: center;
+    height: 30px;
+    color: var(--app-fg);
+    background: var(--glass-control);
+    border-radius: 9px;
+    box-shadow:
+      inset 0 0 0 1px var(--glass-control-edge),
+      inset 0 1px 0 var(--glass-control-sheen);
+  }
+
+  .app-display-control:hover {
+    background: var(--glass-control-hover);
+  }
+
+  .app-display-control:focus-within {
+    outline: 2px solid currentColor;
+    outline-offset: 1px;
+  }
+
+  .app-display-control__label {
+    padding-left: 8px;
+    color: var(--app-fg-dim);
+    font-family: Georgia, 'Times New Roman', serif;
+    font-weight: 600;
+    pointer-events: none;
+  }
+
+  .app-display-control__select {
+    height: 30px;
+    padding: 0 23px 0 5px;
+    appearance: none;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+  }
+
+  .app-display-control::after {
+    content: '';
+    position: absolute;
+    right: 9px;
+    top: 10px;
+    width: 5px;
+    height: 5px;
+    border-right: 1.5px solid currentColor;
+    border-bottom: 1.5px solid currentColor;
+    transform: rotate(45deg);
+    pointer-events: none;
+  }
+
+  .app-display-control__select option {
+    background: var(--app-bg);
+    color: var(--app-fg);
   }
 
   /* The table-size prompt is application chrome, so it uses the same Liquid Glass stack
@@ -726,10 +884,10 @@
   /*
    * The reading column, the same under every theme. See --app-doc-width above.
    *
-   * `max(70%, min(100%, 560px))` reads as: 70% of the window, except where that would be
-   * narrower than 560px, in which case take 560px — or the whole window if even that
-   * doesn't fit. So a desktop gets its 70%, a tablet keeps a full line of prose, and a
-   * phone gets the entire screen with no arithmetic special case in between.
+   * `max(var(--app-doc-width), min(100%, 560px))` uses the selected share of the window,
+   * except where that would be narrower than 560px, in which case it takes 560px — or the
+   * whole window if even that doesn't fit. So a desktop gets the chosen width, a tablet
+   * keeps a full line of prose, and a phone gets the entire screen.
    *
    * In `@layer app`, so it outranks the theme's own max-width without needing !important
    * or a more specific selector. Padding is left to the theme, since that gutter is part
@@ -767,7 +925,7 @@
 
     /* The theme name is long and the tabs are what the window is for, so the picker gives
        up its width first — it still reads as a picker, just an abbreviated one. */
-    .app-bar select {
+    .app-theme-trigger {
       max-width: 120px;
     }
 

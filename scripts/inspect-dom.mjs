@@ -17,6 +17,11 @@ import { chromium } from 'playwright'
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const PORT = 4174
 
+async function selectTheme(page, id) {
+  await page.locator('#theme-select').click()
+  await page.locator(`.app-theme-option[data-theme-id="${id}"]`).click()
+}
+
 const proc = spawn(
   process.execPath,
   [join(ROOT, 'node_modules/vite/bin/vite.js'), 'preview', '--port', String(PORT), '--strictPort'],
@@ -91,7 +96,7 @@ if (arg === '--fence') {
   console.log('markdown has aside:', after.md)
 } else {
   if (arg) {
-    await page.selectOption('#theme-select', arg)
+    await selectTheme(page, arg)
     await page.waitForTimeout(1500)
   }
   const { total, out } = await page.evaluate(() => {

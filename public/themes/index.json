@@ -1,9 +1,9 @@
 {
-  "generated": "2026-07-29T11:30:02.944Z",
+  "generated": "2026-07-29T23:29:06.845Z",
   "packs": {
     "kiwi": {
-      "fingerprint": "f78391e8214e92b4",
-      "files": 6
+      "fingerprint": "31432ecebb20c35e",
+      "files": 7
     },
     "claude": {
       "fingerprint": "33c7d8fc564a1b64",
@@ -35,6 +35,16 @@
       "pack": "Kiwidown",
       "dark": true,
       "href": "kiwi/qi.css",
+      "license": "MIT",
+      "author": "ashawkey",
+      "source": "https://github.com/ashawkey/kiwidown"
+    },
+    {
+      "id": "kiwi/ye",
+      "name": "Ye 叶",
+      "pack": "Kiwidown",
+      "dark": false,
+      "href": "kiwi/ye.css",
       "license": "MIT",
       "author": "ashawkey",
       "source": "https://github.com/ashawkey/kiwidown"

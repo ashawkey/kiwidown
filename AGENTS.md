@@ -18,7 +18,7 @@
 - `src/app/`: application chrome; `src/welcome/`: first-run and contract-check fixture.
 - `doc/dom-contract.md`: authoritative specification for the DOM expected by unmodified Typora themes.
 - `themes.manifest.json`: source of truth for vendored themes. `public/themes/index.json` and theme files are reconciled by `scripts/fetch-themes.mjs`.
-- `public/themes/kiwi/`: the four built-in themes — source, not vendored material. `kiwi.css` holds the structure and `glassy.css` the Liquid Glass material; `su.css`, `qi.css`, `glassy-su.css` and `glassy-qi.css` are palettes only. The glazed pair import `kiwi.css` then `glassy.css`, so they inherit the DOM-contract coverage and restate only material differences — keep it that way rather than forking the structure.
+- `public/themes/kiwi/`: the five built-in themes — source, not vendored material. `kiwi.css` holds the shared DOM-contract structure and `glassy.css` the Liquid Glass material; `su.css`, `qi.css`, `glassy-su.css` and `glassy-qi.css` are palettes only. `ye.css` starts from `kiwi.css` but deliberately overrides typography and structure for its academic-paper format. The glazed pair import `kiwi.css` then `glassy.css`, so they inherit the DOM-contract coverage and restate only material differences — keep it that way rather than forking the structure.
 - `fonts.manifest.json` and `public/fonts/`: webfonts our own themes ask for, reconciled by `scripts/fetch-fonts.mjs`. Fonts inside theme packs stay in their pack.
 - `public/typora-base/`: committed, vendored Typora base styles. `dist/` and screenshot directories are generated and ignored.
 - `scripts/`: browser regression checks, screenshot harnesses, asset fetchers, and diagnostics.

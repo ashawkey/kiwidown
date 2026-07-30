@@ -19,6 +19,11 @@ import { chromium } from 'playwright'
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const OUT = join(ROOT, 'test', 'shots')
 const PORT = 4173
+
+async function selectTheme(page, id) {
+  await page.locator('#theme-select').click()
+  await page.locator(`.app-theme-option[data-theme-id="${id}"]`).click()
+}
 const VIEWPORT = { width: 1280, height: 900 }
 
 const filter = process.argv[2]
@@ -108,7 +113,7 @@ async function shoot(browser, wanted) {
 
   for (const theme of wanted) {
     current = theme.id
-    await page.selectOption('#theme-select', theme.id)
+    await selectTheme(page, theme.id)
     // The theme arrives via @import, so wait for it to be fetched and parsed rather
     // than trusting a fixed delay. An imported sheet is not a top-level entry in
     // document.styleSheets — it hangs off the slot's own CSSImportRule, and its

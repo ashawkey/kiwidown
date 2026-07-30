@@ -56,7 +56,7 @@ const checks = await page.evaluate(() => {
     return rule instanceof CSSImportRule ? countRules(rule.styleSheet) : 0
   }
   return {
-    themeOptions: document.querySelectorAll('#theme-select option').length,
+    themeOptions: document.querySelectorAll('.app-theme-option').length,
     writeChildren: write?.children.length ?? 0,
     baseRules: imported(base),
     themeRules: imported(slot),

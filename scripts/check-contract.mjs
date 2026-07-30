@@ -19,6 +19,11 @@ import { chromium } from 'playwright'
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const PORT = 4175
 
+async function selectTheme(page, id) {
+  await page.locator('#theme-select').click()
+  await page.locator(`.app-theme-option[data-theme-id="${id}"]`).click()
+}
+
 /**
  * @type {Array<{ what: string, selector: string, min?: number, why?: string }>}
  */
@@ -568,8 +573,8 @@ async function run(browser) {
 
   // Mermaid measures labels while rendering. Changing to a wider theme font must rebuild
   // that geometry, otherwise labels overflow their foreignObject and lose their last glyph.
-  const previousTheme = await page.inputValue('#theme-select')
-  await page.selectOption('#theme-select', 'claude/claude')
+  const previousTheme = await page.getAttribute('#theme-select', 'data-theme-id')
+  await selectTheme(page, 'claude/claude')
   const diagramLabels = await settled(
     page,
     () => {
@@ -593,10 +598,11 @@ async function run(browser) {
   tally(diagramLabelsOk)
   console.log(`  ${diagramLabelsOk ? 'PASS' : 'FAIL'}  ${'diagram labels follow theme fonts'.padEnd(38)}`)
   if (!diagramLabelsOk) console.log(`        -> ${JSON.stringify(diagramLabels)}`)
-  await page.selectOption('#theme-select', previousTheme)
+  await selectTheme(page, previousTheme)
   await settled(page, () => ({
     restored:
-      document.documentElement.dataset['theme'] === document.querySelector('#theme-select')?.value,
+      document.documentElement.dataset['theme'] ===
+      document.querySelector('#theme-select')?.getAttribute('data-theme-id'),
   }))
 
   // Rendering a diagram must not consume its source. The round-trip check above compares
