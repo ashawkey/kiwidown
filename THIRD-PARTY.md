@@ -5,16 +5,17 @@ that ships in the repository or in a build.
 
 ## Our own themes — `public/themes/kiwi/`
 
-Su 素, Qi 漆, Glassy Su 璃素 and Glassy Qi 璃漆 are written here, not ported, and are MIT
-along with the rest of Kiwidown's source. They are the one pack under `public/themes/` that
+Su 素, Qi 漆, Ye 叶, Glassy Su 璃素, Glassy Qi 璃漆 and Glassy Ye 璃叶 are written here,
+not ported, and are MIT along with the rest of Kiwidown's source. They are the one pack
+under `public/themes/` that
 is not third-party material; the manifest marks them `"local": true` so `themes:fetch` never
 treats them as a download.
 
-The glazed pair follow Apple's **Liquid Glass** design language. No Apple code, asset or
+The glazed trio follow Apple's **Liquid Glass** design language. No Apple code, asset or
 typeface is used or redistributed — the material is rebuilt from CSS primitives
-(`backdrop-filter`, gradients, inset highlights), and the body face is the same LXGW WenKai
-the other two use. "Liquid Glass" is Apple's name for the language and is referred to only
-descriptively; the themes are named 璃素 and 璃漆.
+(`backdrop-filter`, gradients, inset highlights), while each theme retains the typography
+of its paper counterpart. "Liquid Glass" is Apple's name for the language and is referred
+to only descriptively; the themes are named 璃素, 璃漆 and 璃叶.
 
 ## Themes — `public/themes/`
 

@@ -37,7 +37,8 @@
         { "slug": "qi", "name": "Qi 漆", "css": "qi.css", "dark": true },
         { "slug": "ye", "name": "Ye 叶", "css": "ye.css", "dark": false },
         { "slug": "glassy-su", "name": "Glassy Su 璃素", "css": "glassy-su.css", "dark": false },
-        { "slug": "glassy-qi", "name": "Glassy Qi 璃漆", "css": "glassy-qi.css", "dark": true }
+        { "slug": "glassy-qi", "name": "Glassy Qi 璃漆", "css": "glassy-qi.css", "dark": true },
+        { "slug": "glassy-ye", "name": "Glassy Ye 璃叶", "css": "glassy-ye.css", "dark": false }
       ]
     },
     {

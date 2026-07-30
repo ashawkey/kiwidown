@@ -1,9 +1,9 @@
 {
-  "generated": "2026-07-29T23:29:06.845Z",
+  "generated": "2026-07-30T00:08:37.601Z",
   "packs": {
     "kiwi": {
-      "fingerprint": "31432ecebb20c35e",
-      "files": 7
+      "fingerprint": "18903f58e10f5c6e",
+      "files": 8
     },
     "claude": {
       "fingerprint": "33c7d8fc564a1b64",
@@ -65,6 +65,16 @@
       "pack": "Kiwidown",
       "dark": true,
       "href": "kiwi/glassy-qi.css",
+      "license": "MIT",
+      "author": "ashawkey",
+      "source": "https://github.com/ashawkey/kiwidown"
+    },
+    {
+      "id": "kiwi/glassy-ye",
+      "name": "Glassy Ye 璃叶",
+      "pack": "Kiwidown",
+      "dark": false,
+      "href": "kiwi/glassy-ye.css",
       "license": "MIT",
       "author": "ashawkey",
       "source": "https://github.com/ashawkey/kiwidown"

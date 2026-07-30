@@ -52,7 +52,7 @@ html {
   counter-reset: ye-section ye-subsection;
   padding: 3.25rem 2.75rem 8rem;
   font-family: var(--kiwi-body);
-  font-size: 1rem;
+  font-size: 1.1rem;
   font-variant-numeric: lining-nums tabular-nums;
   line-height: 1.58;
   text-align: justify;

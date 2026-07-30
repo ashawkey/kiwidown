@@ -1,0 +1,61 @@
+/*
+ * Glassy Ye 璃叶 — Ye, glazed.
+ *
+ * Ye's conference-paper typography remains intact, but its warm stock becomes a clear
+ * botanical glass. Broad pools of parchment, celadon and moss move beneath the page; the
+ * restrained scholarly green stays the only strong hue, now expressed through translucent
+ * rims, selection and navigation affordances rather than opaque decoration.
+ *
+ * The academic structure and type come from ye.css, the material from glassy.css. This file
+ * is the palette for both.
+ */
+
+@import './ye.css';
+@import './glassy.css';
+
+:root {
+  color-scheme: light;
+
+  /* Quiet, low-contrast colour centred beneath the reading column gives the glass depth
+     without competing with the dense manuscript typography. */
+  --lg-field: radial-gradient(70rem 46rem at 20% 5%, rgba(211, 198, 158, 0.56), transparent 60%),
+    radial-gradient(62rem 44rem at 82% 28%, rgba(157, 195, 174, 0.56), transparent 62%),
+    radial-gradient(72rem 50rem at 48% 96%, rgba(164, 183, 147, 0.48), transparent 60%) #e8e9e1;
+
+  --lg-pane: rgba(255, 255, 252, 0.56);
+  --lg-gloss: rgba(255, 255, 255, 0.5);
+  --lg-pane-inner: rgba(255, 255, 255, 0.2);
+  --lg-chip: rgba(255, 255, 255, 0.43);
+  --lg-sheen: rgba(255, 255, 255, 0.86);
+  --lg-rim: rgba(39, 58, 45, 0.12);
+  --lg-shadow: 0 26px 60px -26px rgba(42, 57, 43, 0.42);
+  --lg-blur: saturate(170%) blur(26px);
+  --lg-blur-inner: saturate(205%) blur(10px);
+
+  /* A near-paper fallback for browsers without backdrop filtering. */
+  --kiwi-bg: #f1f2ec;
+
+  /* Carbon ink is held darker than in Ye because the ground beneath the pane moves. */
+  --kiwi-ink: #20241e;
+  --kiwi-ink-strong: #0f120e;
+  --kiwi-ink-soft: #565e54;
+  --kiwi-ink-faint: #858e82;
+
+  --kiwi-rule: rgba(39, 58, 45, 0.17);
+  --kiwi-wash: rgba(255, 255, 255, 0.46);
+  --kiwi-wash-edge: rgba(39, 58, 45, 0.12);
+
+  --kiwi-accent: #3d725d;
+  --kiwi-accent-ink: #285e49;
+  --kiwi-accent-wash: rgba(107, 156, 130, 0.28);
+  --kiwi-select: rgba(119, 166, 141, 0.32);
+
+  /* Ye's reserved technical palette, deepened for translucent code panes. */
+  --cm-comment: #7f887c;
+  --cm-keyword: #315a82;
+  --cm-string: #4e6c42;
+  --cm-number: #875338;
+  --cm-name: #20241e;
+  --cm-punct: #676e64;
+  --cm-error: #9d3027;
+}

@@ -1,10 +1,10 @@
 /*
- * 璃 — the glass material. Shared by Glassy Su 璃素 and Glassy Qi 璃漆.
+ * 璃 — the glass material shared by Kiwidown's glazed themes.
  *
- * 璃 is the 璃 of 琉璃, glazed and translucent. These two are not a new family: they are Su
- * and Qi seen through glass. glassy-su.css and glassy-qi.css each load kiwi.css first, so
- * the type, the rhythm, the vermilion and every selector the DOM contract asks for arrive
- * already set; this file changes only the material they are made of.
+ * 璃 is the 璃 of 琉璃, glazed and translucent. These are not a new family: they are Su, Qi
+ * and Ye seen through glass. Each palette loads its structural foundation first — kiwi.css
+ * for Su and Qi, ye.css for Ye — so the type, rhythm, accent and every selector the DOM
+ * contract asks for arrive already set; this file changes only their material.
  *
  * That layering is deliberate. A theme has to answer for the whole of doc/dom-contract.md,
  * and a second copy of those answers is a second place to forget one. Here the only rules
@@ -34,7 +34,7 @@
  * that ink never sits directly on the backdrop, and the ink is pushed a step further from
  * the ground than in Su and Qi, where the page was a known colour.
  *
- * ── The palette glassy-su.css and glassy-qi.css must define ───────────────────────────
+ * ── What each glassy palette must define ─────────────────────────────────────────────
  * Everything kiwi.css asks for, plus:
  *   --lg-field        the backdrop: a background shorthand, gradients and all
  *   --lg-pane         the sheet's own fill, translucent
@@ -163,8 +163,8 @@ body {
 #write table td {
   border-right: 1px solid var(--lg-rim);
   border-bottom: 1px solid var(--lg-rim);
-  /* Su and Qi pull the outer columns flush with the text; inside a pane they need the
-     inset back, or the first character sits on the rim. */
+  /* Paper themes may pull the outer columns flush with the text; inside a pane they need
+     the inset back, or the first character sits on the rim. */
   padding: 0.6em 1em;
 }
 
