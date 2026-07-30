@@ -82,12 +82,13 @@ outstanding.
 
 ## Runtime dependencies
 
-Installed from npm, not vendored. The tree is 250 MIT, 34 ISC, and a handful of BSD and
+Installed from npm, not vendored. The tree is 261 MIT, 35 ISC, and a handful of BSD and
 Apache-2.0 packages, with nothing copyleft. The notable ones:
 
 | package | licence | used for |
 |---|---|---|
 | [@milkdown/kit](https://github.com/Milkdown/milkdown) | MIT | the editor (ProseMirror + remark) |
+| [CodeMirror 6](https://github.com/codemirror) (`@codemirror/*`, `@lezer/*`) | MIT | source mode: highlighting, folding, find |
 | [refractor](https://github.com/wooorm/refractor) / Prism | MIT | code fence tokenising |
 | [KaTeX](https://github.com/KaTeX/KaTeX) | MIT | `$math$` |
 | [Mermaid](https://github.com/mermaid-js/mermaid) | MIT | ` ```mermaid ` diagrams |

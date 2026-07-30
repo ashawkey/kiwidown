@@ -91,6 +91,16 @@ export function createDisplayControls(): {
     writeElement()?.style.removeProperty('font-size')
   }
 
+  /**
+   * The scale as a plain multiplier, for chrome that sizes itself in explicit px and so has
+   * nothing to inherit the scaled root size from — source mode's CodeMirror surface. Not
+   * part of applyFontSize: that one clears and re-reads the theme's own sizes, and this
+   * does not depend on the theme.
+   */
+  function applyFontScale(): void {
+    document.documentElement.style.setProperty('--app-font-scale', String(fontScale / 100))
+  }
+
   function applyFontSize(): void {
     const write = writeElement()
     if (!write) return
@@ -115,9 +125,11 @@ export function createDisplayControls(): {
     const next = Number(font.select.value)
     if (!FONT_SCALES.includes(next as (typeof FONT_SCALES)[number])) return
     fontScale = next
+    applyFontScale()
     applyFontSize()
     saveChoice(FONT_STORAGE_KEY, fontScale)
-    // Mermaid measures label boxes while rendering, so regenerate it at the new size.
+    // Mermaid measures label boxes while rendering and CodeMirror caches line heights, so
+    // tell both that the type scale moved.
     window.dispatchEvent(new Event(THEME_CHANGE_EVENT))
   })
 
@@ -151,6 +163,7 @@ export function createDisplayControls(): {
     if (token === refreshToken) applyFontSize()
   }
 
+  applyFontScale()
   applyDocumentWidth()
   void refreshForTheme()
   return { element, refreshForTheme }

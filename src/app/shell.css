@@ -42,6 +42,11 @@
     --app-syntax-keyword: #cf222e;
     --app-syntax-string: #116329;
 
+    /* Find in source mode: every match, and then the one the caret is on. Amber rather than
+       a syntax colour, so a match never reads as a token. */
+    --app-match: #f2cc6033;
+    --app-match-active: #f0883e88;
+
     /*
      * Liquid Glass.
      *
@@ -84,6 +89,9 @@
     --app-syntax-markup: #8b949e;
     --app-syntax-keyword: #ff7b72;
     --app-syntax-string: #7ee787;
+
+    --app-match: #f2cc6040;
+    --app-match-active: #f0883e99;
 
     /* Dark glass is a darker tint with a dimmer highlight — the specular edge is what
        reads as "glass", so it stays, just quieter. */
@@ -761,7 +769,11 @@
   /* Source mode is a real CodeMirror editing surface. Keeping highlighting, selection and
      input in one layout tree avoids the unavoidable drift of textarea/pre overlays. */
   .app-source {
+    /* Above and below the text. The inline measure comes from --app-doc-width instead, so
+       source and rendered mode occupy the same column; --app-source-inset is the floor for
+       its side margins, for the window widths where that column is the whole window. */
     --app-source-padding: 32px;
+    --app-source-inset: 18px;
 
     position: absolute;
     inset: 0;
@@ -775,12 +787,6 @@
     position: relative;
     width: 100%;
     height: 100%;
-  }
-
-  @media (max-width: 600px) {
-    .app-source {
-      --app-source-padding: 32px 18px;
-    }
   }
 
   .app-stage.is-drop-target::after {

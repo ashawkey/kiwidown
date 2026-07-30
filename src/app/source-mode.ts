@@ -1,7 +1,20 @@
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands'
-import { HighlightStyle, syntaxHighlighting } from '@codemirror/language'
+import { HighlightStyle, foldGutter, foldKeymap, syntaxHighlighting } from '@codemirror/language'
+import { highlightSelectionMatches, search, searchKeymap } from '@codemirror/search'
 import { EditorState } from '@codemirror/state'
-import { EditorView, keymap } from '@codemirror/view'
+import {
+  EditorView,
+  crosshairCursor,
+  drawSelection,
+  dropCursor,
+  highlightActiveLine,
+  highlightActiveLineGutter,
+  highlightSpecialChars,
+  highlightTrailingWhitespace,
+  keymap,
+  lineNumbers,
+  rectangularSelection,
+} from '@codemirror/view'
 import { tags } from '@lezer/highlight'
 import { Selection as ProseSelection } from '@milkdown/kit/prose/state'
 import type { Node as ProseNode } from '@milkdown/kit/prose/model'
@@ -9,6 +22,13 @@ import type { Node as ProseNode } from '@milkdown/kit/prose/model'
 import type { DocumentState } from '../doc'
 import type { DocumentViews } from '../doc/views'
 import type { EditorHandle } from '../editor'
+import { THEME_CHANGE_EVENT } from '../theme'
+import {
+  dedentListItem,
+  indentListItem,
+  insertNewlineContinueMarkup,
+  sourceFolding,
+} from './source-commands'
 import {
   alignBlocks,
   renderedInnerOffset,
@@ -23,8 +43,8 @@ import {
 
 interface SourceViewState {
   state: EditorState
+  /** Only the vertical offset: the source column wraps, so it never scrolls sideways. */
   scrollTop: number
-  scrollLeft: number
 }
 
 /**
@@ -106,6 +126,12 @@ const sourceColors = HighlightStyle.define([
   { tag: [tags.number, tags.bool, tags.atom], color: 'var(--app-syntax-code)' },
 ])
 
+/** The rendered document's reading column, from shell.css. */
+const COLUMN = 'max(var(--app-doc-width), min(100%, var(--app-doc-measure)))'
+
+/** The chrome's own inset, so panels line up with the column the scroller paints. */
+const COLUMN_INSET = `max(var(--app-source-inset), calc((100% - ${COLUMN}) / 2))`
+
 const sourceTheme = EditorView.theme({
   '&': {
     height: '100%',
@@ -113,27 +139,154 @@ const sourceTheme = EditorView.theme({
     backgroundColor: 'transparent',
   },
   '&.cm-focused': { outline: 'none' },
+  /*
+   * The column is inline padding on the scroller rather than a width on the content, so the
+   * line-number gutter — a flex sibling of the content, pinned to the scroller's inline
+   * start — sits inside the column instead of out at the window edge.
+   *
+   * Sizes are explicit px like the rest of the chrome, since themes reset the root size;
+   * --app-font-scale is how the font-size control reaches them (see display-controls.ts).
+   */
   '.cm-scroller': {
     overflow: 'auto',
+    paddingInline: COLUMN_INSET,
     fontFamily: "ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace",
-    fontSize: '14px',
-    lineHeight: '22px',
+    fontSize: 'calc(14px * var(--app-font-scale, 1))',
+    lineHeight: 'calc(22px * var(--app-font-scale, 1))',
     fontVariantLigatures: 'none',
   },
   '.cm-content': {
-    flex: '0 0 auto',
-    width: 'max(var(--app-doc-width), min(100%, var(--app-doc-measure)))',
+    flex: '1 1 auto',
+    minWidth: '0',
     minHeight: '100%',
-    marginInline: 'auto',
-    padding: 'var(--app-source-padding)',
+    paddingBlock: 'var(--app-source-padding)',
     caretColor: 'var(--app-fg)',
   },
   '.cm-line': { padding: '0' },
+  // No background or border of its own: numbers in the document's own margin, not a panel.
+  // Their vertical offset comes from the content's padding, so the gutter adds none.
+  '.cm-gutters': {
+    border: 'none',
+    background: 'transparent',
+    color: 'var(--app-fg-dim)',
+    userSelect: 'none',
+  },
+  '.cm-lineNumbers .cm-gutterElement': {
+    padding: '0 12px 0 0',
+    minWidth: '3ch',
+    fontVariantNumeric: 'tabular-nums',
+  },
+  '.cm-foldGutter .cm-gutterElement': { padding: '0 4px 0 0', cursor: 'pointer' },
+  // The markers are chrome, not text. An unfolded one only earns its place under the pointer;
+  // a folded one has to stay visible, since it is the only sign anything is hidden.
+  '.app-source__fold': { opacity: '0', transition: 'opacity 120ms' },
+  '.cm-gutters:hover .app-source__fold, .app-source__fold.is-folded': { opacity: '0.6' },
+  '.cm-foldPlaceholder': {
+    margin: '0 4px',
+    padding: '0 6px',
+    border: '1px solid var(--app-border)',
+    borderRadius: '4px',
+    background: 'var(--app-hover)',
+    color: 'var(--app-fg-dim)',
+  },
+  '.cm-activeLine': { backgroundColor: 'color-mix(in srgb, var(--app-fg) 4%, transparent)' },
+  '.cm-activeLineGutter': { background: 'transparent', color: 'var(--app-fg)' },
   '.cm-cursor, .cm-dropCursor': { borderLeftColor: 'var(--app-fg)' },
   '&.cm-focused .cm-selectionBackground, .cm-selectionBackground, ::selection': {
     backgroundColor: 'color-mix(in srgb, var(--app-fg) 22%, transparent)',
   },
+  // Matched through .cm-content, which the extensions' own light/dark rules do not do, so
+  // these win on specificity and can then follow the app's light/dark signal instead.
+  '.cm-content .cm-selectionMatch': {
+    backgroundColor: 'color-mix(in srgb, var(--app-syntax-link) 18%, transparent)',
+  },
+  '.cm-content .cm-searchMatch': { backgroundColor: 'var(--app-match)' },
+  '.cm-content .cm-searchMatch-selected': { backgroundColor: 'var(--app-match-active)' },
+  // A hard line break is two spaces nobody can see, and a non-breaking space parses as a
+  // letter. Mark the space itself rather than colouring text that looks perfectly normal.
+  '.cm-trailingSpace': {
+    backgroundColor: 'color-mix(in srgb, var(--app-syntax-keyword) 18%, transparent)',
+    borderRadius: '2px',
+  },
+  '.cm-specialChar': {
+    color: 'var(--app-syntax-keyword)',
+    background: 'color-mix(in srgb, var(--app-syntax-keyword) 12%, transparent)',
+  },
+  /*
+   * The find panel, which CodeMirror puts in a slot of its own outside the scroller: it needs
+   * the chrome's type and colours, since the surface's monospace and --app-font-scale stop at
+   * the scroller, and the column's inset, to line up with the text it searches.
+   *
+   * The selectors carry .cm-panel as well, to outrank the search extension's own base theme.
+   */
+  '.cm-panels': {
+    border: 'none',
+    background: 'transparent',
+    color: 'var(--app-fg)',
+    font: '13px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+  },
+  '.cm-panels.cm-panels-top': { borderBottom: '1px solid var(--app-border)' },
+  '.cm-panel.cm-search': {
+    display: 'flex',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: '6px',
+    padding: `8px ${COLUMN_INSET}`,
+    background: 'var(--app-bg)',
+  },
+  '.cm-panel.cm-search label': {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '4px',
+    margin: '0',
+    fontSize: '92%',
+    color: 'var(--app-fg-dim)',
+  },
+  '.cm-panel.cm-search input, .cm-panel.cm-search button': {
+    margin: '0',
+    font: 'inherit',
+    color: 'var(--app-fg)',
+  },
+  '.cm-textfield': {
+    minWidth: '12ch',
+    padding: '3px 6px',
+    border: '1px solid var(--app-border)',
+    borderRadius: '5px',
+    background: 'var(--app-bg)',
+  },
+  '.cm-textfield:focus-visible': { outline: '2px solid var(--app-syntax-link)' },
+  '.cm-button': {
+    padding: '3px 8px',
+    border: '1px solid var(--app-border)',
+    borderRadius: '5px',
+    background: 'var(--app-bg)',
+    backgroundImage: 'none',
+    cursor: 'pointer',
+  },
+  '.cm-button:hover': { background: 'var(--app-hover)' },
+  // Absolutely positioned by the extension. Pulled in to the column's edge, where the text
+  // it closes over ends, rather than the window's.
+  '.cm-panel.cm-search button[name="close"]': {
+    top: '6px',
+    right: COLUMN_INSET,
+    padding: '0 4px',
+    border: 'none',
+    background: 'transparent',
+    color: 'var(--app-fg-dim)',
+    fontSize: '18px',
+    lineHeight: '1',
+    cursor: 'pointer',
+  },
 })
+
+/** A fold arrow, classed so the theme above can hide the ones that are not folded. */
+function foldMarker(open: boolean): HTMLElement {
+  const marker = document.createElement('span')
+  marker.className = open ? 'app-source__fold' : 'app-source__fold is-folded'
+  marker.title = open ? 'Fold section' : 'Unfold section'
+  marker.textContent = open ? '⌄' : '›'
+  return marker
+}
 
 /**
  * An editable, highlighted view of the active document's Markdown source.
@@ -166,8 +319,38 @@ export function createSourceMode(options: SourceModeOptions): SourceMode {
     sourceMarkdown.extension,
     syntaxHighlighting(sourceClasses),
     syntaxHighlighting(sourceColors),
+    lineNumbers(),
+    highlightActiveLine(),
+    highlightActiveLineGutter(),
+    sourceFolding,
+    foldGutter({ markerDOM: foldMarker }),
+    // Markdown lines are prose, and a paragraph is one line: wrapping, not a horizontal
+    // scrollbar. Also what keeps the source column the same shape as the rendered one.
+    EditorView.lineWrapping,
+    // Whitespace that changes what Markdown means but cannot be seen: two trailing spaces
+    // are a hard line break, and a non-breaking space pasted in from a web page or a word
+    // processor stops a marker, a fence or a table from parsing at all.
+    highlightTrailingWhitespace(),
+    // Non-breaking, figure, narrow and word-joiner spaces; the zero-width ones and the
+    // byte-order mark are already in the extension's own set.
+    highlightSpecialChars({ addSpecialChars: /[\u00a0\u2007\u202f\u2060]/g }),
+    // CodeMirror draws the selection itself, which is what lets there be more than one.
+    drawSelection(),
+    dropCursor(),
+    rectangularSelection(),
+    crosshairCursor(),
+    EditorState.allowMultipleSelections.of(true),
+    highlightSelectionMatches(),
+    search({ top: true }),
     history(),
-    keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab]),
+    // Ahead of the default keymap, and each of these declines the key when the caret is not
+    // somewhere it applies, leaving the default binding to run.
+    keymap.of([
+      { key: 'Enter', run: insertNewlineContinueMarkup },
+      { key: 'Tab', run: indentListItem },
+      { key: 'Shift-Tab', run: dedentListItem },
+    ]),
+    keymap.of([...defaultKeymap, ...historyKeymap, ...searchKeymap, ...foldKeymap, indentWithTab]),
     EditorView.contentAttributes.of({
       'aria-label': 'Markdown source',
       'aria-multiline': 'true',
@@ -179,6 +362,11 @@ export function createSourceMode(options: SourceModeOptions): SourceMode {
     EditorView.updateListener.of((update) => {
       if (update.docChanged && !internalChange) options.onEdit()
     }),
+    // A dropped file belongs to the app, which opens it in its own tab (see bindFileDrop).
+    // CodeMirror's own drop handler would read it as text and paste it into this document.
+    EditorView.domEventHandlers({
+      drop: (event) => Boolean(event.dataTransfer?.files.length),
+    }),
     sourceTheme,
   ]
 
@@ -186,6 +374,10 @@ export function createSourceMode(options: SourceModeOptions): SourceMode {
     state: EditorState.create({ doc: '', extensions }),
     parent: surface,
   })
+
+  // CodeMirror caches line heights and only watches its scroller for resizes, which the
+  // font-size control does not change — it moves --app-font-scale and fires this event.
+  window.addEventListener(THEME_CHANGE_EVENT, () => sourceView.requestMeasure())
 
   function markdownText(): string {
     return sourceView.state.doc.toString()
@@ -313,11 +505,7 @@ export function createSourceMode(options: SourceModeOptions): SourceMode {
   }
 
   function capture(id: string): void {
-    retained.set(id, {
-      state: sourceView.state,
-      scrollTop: sourceView.scrollDOM.scrollTop,
-      scrollLeft: sourceView.scrollDOM.scrollLeft,
-    })
+    retained.set(id, { state: sourceView.state, scrollTop: sourceView.scrollDOM.scrollTop })
   }
 
   function show(markdown: string, id: string, restoreKept = false, anchor?: RenderedAnchor): void {
@@ -345,7 +533,6 @@ export function createSourceMode(options: SourceModeOptions): SourceMode {
         if (top != null) sourceView.scrollDOM.scrollTop += top - anchor.viewportY
       } else {
         sourceView.scrollDOM.scrollTop = kept?.scrollTop ?? 0
-        sourceView.scrollDOM.scrollLeft = kept?.scrollLeft ?? 0
       }
       sourceView.requestMeasure()
     })

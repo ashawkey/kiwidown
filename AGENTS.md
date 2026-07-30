@@ -16,6 +16,7 @@
 - `src/doc/`: document lifecycle, file access, dirty state, recovery, and URL loading. `views.ts` retains per-tab editor state and scroll.
 - `src/theme/`: runtime theme loading and the Typora compatibility/bridge CSS layers.
 - `src/app/`: application chrome; `src/welcome/`: first-run and contract-check fixture.
+  - `source-mode.ts`: the CodeMirror 6 Markdown source view and its extension set. `source-map.ts` pairs caret positions with the rendered document; `source-commands.ts` holds the Markdown-aware editing commands and the fold service.
 - `doc/dom-contract.md`: authoritative specification for the DOM expected by unmodified Typora themes.
 - `themes.manifest.json`: source of truth for vendored themes. `public/themes/index.json` and theme files are reconciled by `scripts/fetch-themes.mjs`.
 - `public/themes/kiwi/`: the six built-in themes — source, not vendored material. `kiwi.css` holds the shared DOM-contract structure and `glassy.css` the Liquid Glass material; `su.css`, `qi.css`, `glassy-su.css` and `glassy-qi.css` are palettes only. `ye.css` starts from `kiwi.css` but deliberately overrides typography and structure for its academic-paper format; `glassy-ye.css` layers the shared glass material over it. Glassy Su/Qi import `kiwi.css`, Glassy Ye imports `ye.css`, and all three then import `glassy.css`, so they inherit the DOM-contract coverage and restate only palette differences — keep it that way rather than forking the structure.
