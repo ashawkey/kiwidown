@@ -192,7 +192,8 @@ html {
   width: max-content;
   min-width: min(24rem, calc(100% - 2rem));
   max-width: calc(100% - 2rem);
-  margin: 1.25rem auto;
+  /* The top margin is also room for the editor's table toolbar; see kiwi.css. */
+  margin: max(1.25rem, var(--app-table-tools-space, 0px)) auto 1.25rem;
   border-top: 2px solid var(--kiwi-ink-strong);
   border-bottom: 2px solid var(--kiwi-ink-strong);
   background: transparent;

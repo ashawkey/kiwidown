@@ -2,6 +2,7 @@ import './app/shell.css'
 import { bindDocumentShortcuts, bindFileDrop, bindUnloadGuard, createDocumentBar } from './app/document-bar'
 import { createDisplayControls } from './app/display-controls'
 import { createSourceMode, type SourceMode } from './app/source-mode'
+import { bindTableTools } from './app/table-tools'
 import { createThemePicker } from './app/theme-picker'
 import { askToast, reportError } from './app/toast'
 import { DocumentStore } from './doc'
@@ -121,6 +122,10 @@ async function main(): Promise<void> {
   let view: EditorView | undefined
   editor.withView((v) => (view = v))
   bindClickToFocus(content, () => view)
+
+  // A table's `|---|:-:|` line is consumed when the block is created, so its shape and
+  // alignment need a handle of their own once it exists.
+  bindTableTools({ scroller: content, view: () => view })
 
   document.documentElement.dataset['appReady'] = 'true'
 

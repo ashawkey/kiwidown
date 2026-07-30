@@ -310,9 +310,15 @@ body {
  * Fine rules form a quiet grid: horizontal lines keep the bookish rhythm, while equally
  * light verticals make columns easy to trace without turning the table into a heavy box.
  * base.css already collapses the borders and gives the enclosing figure its own scroll.
+ *
+ * The top margin is also where the editor draws its table toolbar on hover, so it is at
+ * least as deep as that toolbar is tall. max() rather than an addition, because this margin
+ * is already nearly deep enough and room reserved for chrome that is usually absent is paid
+ * for on every table in every document. --app-table-tools-space comes from the application;
+ * in Typora, where there is no such toolbar, the fallback leaves the margin as it was.
  */
 #write table {
-  margin: 1.5rem 0;
+  margin: max(1.5rem, var(--app-table-tools-space, 0px)) 0 1.5rem;
   font-size: 0.97em;
 }
 

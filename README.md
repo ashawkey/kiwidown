@@ -9,6 +9,7 @@ Write like you would in a rich-text editor while keeping a clean, portable `.md`
 ## Features
 
 - **WYSIWYG editing** — Markdown markers stay out of the way until you place the cursor inside them.
+- **Table editing** — Point at a table to resize it, align a column, or delete it.
 - **Beautiful themes** — Choose from Kiwidown's built-in designs and community Typora themes.
 - **Multiple tabs** — Keep several documents open without losing each document's selection, scroll position, or undo history.
 - **Work recovery** — Unsaved documents are backed up locally and can be restored after a crash or accidental close.

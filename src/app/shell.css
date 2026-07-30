@@ -13,6 +13,19 @@
     --app-bar-h: 52px;
 
     /*
+     * Room above every table for the hover toolbar (src/app/table-tools/).
+     *
+     * Reserved permanently rather than opened up when the toolbar appears: chrome that
+     * reflowed the document as the pointer arrived would move the table out from under the
+     * pointer that summoned it. The built-in themes add --app-table-tools-space to their
+     * own table margin; a theme that doesn't know the variable still gets the toolbar, it
+     * simply overlaps whatever sits above the table.
+     */
+    --app-table-tools-gap: 6px;
+    /* The strip: a 24px button, 2px of capsule padding and a 1px rim, top and bottom. */
+    --app-table-tools-space: calc(30px + var(--app-table-tools-gap));
+
+    /*
      * How wide the rendered document is.
      *
      * Themes disagree wildly about this — 752px in Claude, 1100px in LightMind, a full
@@ -576,6 +589,187 @@
 
   @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
     .app-table-dialog {
+      background: var(--app-bg);
+      border-color: var(--app-border);
+    }
+  }
+
+  /*
+   * The table toolbar.
+   *
+   * Sits in the margin above the table it belongs to, inside the theme's scroll container
+   * but outside #write — see src/app/table-tools/index.ts for why it can't be either a
+   * wrapper or a widget. So everything here is stated explicitly: it inherits the theme's
+   * typography otherwise, and floats over the document rather than over the bar, which is
+   * why the capsules take the panel material and its blur instead of the bar's control
+   * tint. Against a document background a control tint is very nearly nothing at all.
+   */
+  .app-table-tools {
+    --app-table-tools-cell: 13px;
+
+    position: absolute;
+    z-index: 5;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 8px;
+    /* The strip is as wide as its table, so the delete button lands on the table's right
+       edge. Its floor is a min-width set from the controls it holds — see place() — since
+       the one that matters is out of flow and max-content cannot see it. */
+    /* Only the controls take the pointer. The stretch between them is reserved margin, and
+       a click there belongs to the document, not to a toolbar that happens to span it.
+       Hover is decided geometrically, so the strip still counts as somewhere to be. */
+    pointer-events: none;
+    /* Positioned from the table's top edge; the strip then lifts itself clear of it, so
+       nothing in JavaScript has to know how tall it is. */
+    transform: translateY(calc(-100% - var(--app-table-tools-gap)));
+    color: var(--app-fg);
+    font: 13px/1.4 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    user-select: none;
+    animation: app-table-tools-in 120ms ease;
+  }
+
+  .app-table-tools[hidden] {
+    display: none;
+  }
+
+  @keyframes app-table-tools-in {
+    from {
+      opacity: 0;
+    }
+  }
+
+  .app-table-tools__group {
+    pointer-events: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 2px;
+    border-radius: 10px;
+    background: var(--glass-panel);
+    border: 1px solid var(--glass-rim);
+    box-shadow:
+      inset 0 1px 0 var(--glass-edge),
+      0 8px 20px -12px rgb(0 0 0 / 50%);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+  }
+
+  /* Positioned over the column it acts on, so the trip from a cell to its own buttons is
+     straight up and crosses no other column. src/app/table-tools/index.ts sets the offset;
+     the ends of the strip stay where they are. */
+  .app-table-tools__group--align {
+    position: absolute;
+    bottom: 0;
+  }
+
+  .app-table-tools__group--align[hidden] {
+    display: none;
+  }
+
+  /* Smaller than the bar's controls: this is chrome for one block, not for the document. */
+  .app-button.app-table-tools__button {
+    width: 24px;
+    height: 24px;
+    border-radius: 7px;
+    background: transparent;
+    box-shadow: none;
+    color: var(--app-fg-dim);
+  }
+
+  .app-button.app-table-tools__button:hover {
+    background: var(--glass-control-hover);
+    color: var(--app-fg);
+  }
+
+  /* The alignment the target column already has, so the buttons read as a state and not
+     only as three actions. */
+  .app-button.app-table-tools__button.is-active {
+    background: var(--glass-control);
+    box-shadow: inset 0 0 0 1px var(--glass-control-edge);
+    color: var(--app-fg);
+  }
+
+  .app-table-tools__button .app-icon {
+    width: 14px;
+    height: 14px;
+  }
+
+  /*
+   * Which column the align buttons will change.
+   *
+   * The pointer picks the column, and then has to leave it to reach the button — so
+   * without this the target is whatever the user remembers pointing at. Sits in the gap
+   * between the strip and the table, spanning the column it names.
+   */
+  .app-table-tools__marker {
+    position: absolute;
+    bottom: -3px;
+    height: 3px;
+    min-width: 10px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--app-fg) 45%, transparent);
+  }
+
+  .app-table-tools__marker[hidden] {
+    display: none;
+  }
+
+  /* The size picker, hanging under the grid button that opens it. */
+  .app-table-tools__sizer {
+    pointer-events: auto;
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    z-index: 1;
+    padding: 8px;
+    background: var(--glass-panel);
+    border: 1px solid var(--glass-rim);
+    border-radius: 12px;
+    box-shadow:
+      inset 0 1px 0 var(--glass-edge),
+      0 18px 44px -18px rgb(0 0 0 / 48%);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+  }
+
+  .app-table-tools__sizer[hidden] {
+    display: none;
+  }
+
+  .app-table-tools__sizer:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 1px;
+  }
+
+  .app-table-tools__grid {
+    display: grid;
+    gap: 3px;
+    cursor: pointer;
+  }
+
+  .app-table-tools__cell {
+    height: var(--app-table-tools-cell);
+    border-radius: 2px;
+    background: var(--glass-control);
+    box-shadow: inset 0 0 0 1px var(--glass-control-edge);
+  }
+
+  .app-table-tools__cell.is-inside {
+    background: color-mix(in srgb, var(--app-fg) 72%, transparent);
+    box-shadow: none;
+  }
+
+  .app-table-tools__size {
+    margin-top: 7px;
+    color: var(--app-fg-dim);
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+  }
+
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .app-table-tools__group,
+    .app-table-tools__sizer {
       background: var(--app-bg);
       border-color: var(--app-border);
     }

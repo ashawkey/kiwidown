@@ -1124,6 +1124,245 @@ async function run(browser) {
     })
   )
 
+  // --- the table toolbar -------------------------------------------------------------
+  //
+  // The `|---|:-:|` line is eaten when the table is created, so this is the only handle on
+  // a table's shape and alignment once it exists. It is chrome rather than document DOM —
+  // it lives in the scroller beside #write, because a wrapper or a widget would break the
+  // direct-child relationship themes rely on — so what matters is that it finds the table
+  // under the pointer, edits the column under the pointer, and costs the document nothing
+  // when it appears. That last one is the reason the space is reserved as table margin:
+  // chrome that reflowed the page on hover would move the table out from under the pointer
+  // that summoned it.
+  await page.evaluate(() =>
+    window.__kiwidown.setMarkdown('above\n\n| a | b | c |\n| --- | --- | --- |\n| 1 | 2 | 3 |\n\nbelow\n')
+  )
+  await page.waitForTimeout(150)
+
+  // Out of the document entirely first: earlier checks leave the pointer wherever they last
+  // clicked, and the resting measurement is only meaningful with nothing hovered.
+  await page.mouse.move(6, 6)
+  await page.waitForTimeout(60)
+  const resting = await page.evaluate(() => ({
+    height: Math.round(document.querySelector('#write').getBoundingClientRect().height),
+    hidden: document.querySelector('.app-table-tools').hidden,
+  }))
+  const overSecondColumn = await page.evaluate(() => {
+    const box = document.querySelectorAll('#write table td')[1].getBoundingClientRect()
+    return { x: box.left + box.width / 2, y: box.top + box.height / 2 }
+  })
+  await page.mouse.move(overSecondColumn.x, overSecondColumn.y)
+  await page.waitForTimeout(120)
+
+  record(
+    'hovering a table opens its toolbar',
+    {
+      restingHidden: resting.hidden,
+      ...(await page.evaluate((was) => {
+        const tools = document.querySelector('.app-table-tools')
+        const box = tools.getBoundingClientRect()
+        const table = document.querySelector('#write table').getBoundingClientRect()
+        const above = document.querySelector('#write > p').getBoundingClientRect()
+        return {
+          shown: !tools.hidden,
+          // The whole point of reserving the room in advance.
+          height: Math.round(document.querySelector('#write').getBoundingClientRect().height) === was,
+          // The margin is exactly as deep as the toolbar needs, so this is a fit, not a
+          // clearance -- a pixel of tolerance for the rounding either side of it.
+          inTheMargin: box.bottom <= table.top + 1 && box.top >= above.bottom - 1,
+          spansTheTable: Math.abs(box.width - table.width) < 1,
+          // The pointer picks the column, and has to leave it to reach the buttons.
+          aims: tools.querySelector('[data-align="center"]')?.getAttribute('aria-label') ===
+            'Align column 2 center',
+        }
+      }, resting.height)),
+    },
+    'the toolbar draws in the margin --app-table-tools-space reserves above every table'
+  )
+
+  // Everything that moves a table moves it silently, so the toolbar tracks it by looking
+  // rather than by listening. Inserting a block above is the case that catches a tracker
+  // keyed on the editor's height: on a document shorter than #write's min-height, the
+  // height doesn't change at all and the table still moves.
+  const anchored = await page.evaluate(() => {
+    const tools = document.querySelector('.app-table-tools').getBoundingClientRect()
+    return Math.round(document.querySelector('#write table').getBoundingClientRect().top - tools.bottom)
+  })
+  await page.evaluate(() =>
+    window.__kiwidown.withView((view) =>
+      view.dispatch(view.state.tr.insert(0, view.state.schema.nodes.paragraph.createAndFill()))
+    )
+  )
+  await page.waitForTimeout(120)
+  record(
+    'the toolbar follows its table',
+    await page.evaluate((was) => {
+      const tools = document.querySelector('.app-table-tools')
+      const table = document.querySelector('#write table').getBoundingClientRect()
+      return {
+        shown: !tools.hidden,
+        held: Math.round(table.top - tools.getBoundingClientRect().bottom) === was,
+      }
+    }, anchored)
+  )
+
+  // Back to a known document, and back onto the same cell: replacing the document detached
+  // the table the toolbar was on, so it has to be picked up again.
+  await page.evaluate(() =>
+    window.__kiwidown.setMarkdown('above\n\n| a | b | c |\n| --- | --- | --- |\n| 1 | 2 | 3 |\n\nbelow\n')
+  )
+  await page.waitForTimeout(150)
+
+  // The reserved margin is part of the table as far as pointing goes: the toolbar opens
+  // from it, and aims at the column it is over -- a column being a vertical band, whether
+  // or not there is any of the table at that height.
+  const overThirdColumn = await page.evaluate(() => {
+    const cells = document.querySelectorAll('#write table th')
+    const box = cells[2].getBoundingClientRect()
+    const table = document.querySelector('#write table').getBoundingClientRect()
+    return { x: box.left + box.width / 2, y: table.top - 14 }
+  })
+  await page.mouse.move(6, 6)
+  await page.waitForTimeout(80)
+  await page.mouse.move(overThirdColumn.x, overThirdColumn.y)
+  await page.waitForTimeout(120)
+  record(
+    'the margin above a table opens it too',
+    await page.evaluate(() => {
+      const tools = document.querySelector('.app-table-tools')
+      return {
+        shown: !tools.hidden,
+        aims:
+          tools.querySelector('[data-align="center"]')?.getAttribute('aria-label') ===
+          'Align column 3 center',
+      }
+    })
+  )
+
+  /*
+   * Reaching the buttons must not change what they act on.
+   *
+   * The column is whichever one the pointer is over, so the route to a button is a hazard: a
+   * sweep from a cell to a control crosses every column in between, and taking the last one
+   * crossed means the alignment lands on the wrong column.
+   *
+   * The table is deliberately lopsided, because that is the shape of the bug. The align
+   * group rides above its column precisely so this walk is a short one straight up — but at
+   * the far end of a table it has to give way to the delete button, and then the walk is
+   * long again. Only re-aiming on a settled pointer covers that, and only a walk in many
+   * small steps — what a hand does, and what a single jump does not test at all — shows it.
+   */
+  const wide = 'a first column wide enough to swallow the pointer on its way to the buttons'
+  await page.evaluate(
+    (text) =>
+      window.__kiwidown.setMarkdown(`above\n\n| ${text} | b | c |\n| --- | --- | --- |\n| ${text} | 2 | 3 |\n\nbelow\n`),
+    wide
+  )
+  await page.waitForTimeout(150)
+  await page.mouse.move(6, 6)
+  await page.waitForTimeout(80)
+  const inThirdColumn = await page.evaluate(() => {
+    const box = document.querySelectorAll('#write table td')[2].getBoundingClientRect()
+    return { x: box.left + box.width / 2, y: box.top + box.height / 2 }
+  })
+  await page.mouse.move(inThirdColumn.x, inThirdColumn.y)
+  await page.waitForTimeout(150)
+  const aimedAt = await page.evaluate(() =>
+    document.querySelector('.app-table-tools [data-align="left"]')?.getAttribute('aria-label')
+  )
+  const leftButton = await page.evaluate(() => {
+    const box = document.querySelector('.app-table-tools [data-align="left"]').getBoundingClientRect()
+    return { x: box.left + box.width / 2, y: box.top + box.height / 2 }
+  })
+  await page.mouse.move(leftButton.x, leftButton.y, { steps: 20 })
+  await page.waitForTimeout(120)
+  await page.mouse.down()
+  await page.mouse.up()
+  await page.waitForTimeout(150)
+  record('walking to a button keeps its column', {
+    startedOnThird: aimedAt === 'Align column 3 left',
+    held:
+      (await page.evaluate(() =>
+        document.querySelector('.app-table-tools [data-align="left"]')?.getAttribute('aria-label')
+      )) === 'Align column 3 left',
+    // And the click that follows the walk lands on that column, not on the one the pointer
+    // happened to pass over last.
+    aligned: /^\|\s*-+\s*\|\s*-+\s*\|\s*:-+\s*\|$/.test(
+      (await page.evaluate(() => window.__kiwidown.getMarkdown())).split('\n')[3] ?? ''
+    ),
+  })
+
+  await page.evaluate(() =>
+    window.__kiwidown.setMarkdown('above\n\n| a | b | c |\n| --- | --- | --- |\n| 1 | 2 | 3 |\n\nbelow\n')
+  )
+  await page.waitForTimeout(150)
+  await page.mouse.move(6, 6)
+  await page.waitForTimeout(80)
+  await page.mouse.move(overSecondColumn.x, overSecondColumn.y + 1)
+  await page.waitForTimeout(120)
+
+  await page.click('.app-table-tools [data-align="center"]')
+  await page.waitForTimeout(150)
+  record(
+    'the toolbar aligns one column',
+    await settled(page, () => {
+      const rows = window.__kiwidown.getMarkdown().split('\n')
+      return {
+        // Only the hovered column moves, and it moves in the delimiter row -- which is
+        // where alignment lives in GFM, and the only place it round-trips.
+        markdown: /^\|\s*-+\s*\|\s*:-+:\s*\|\s*-+\s*\|$/.test(rows[3] ?? ''),
+        rendered:
+          document.querySelectorAll('#write table [style*="center"]').length === 2 &&
+          document.querySelector('#write table th:nth-child(2)').style.textAlign === 'center',
+        pressed:
+          document.querySelector('.app-table-tools [data-align="center"]').getAttribute('aria-pressed') ===
+          'true',
+      }
+    })
+  )
+
+  await page.click('.app-table-tools__button[title="Table size"]')
+  await page.waitForTimeout(120)
+  const picker = await page.evaluate(() => {
+    const sizer = document.querySelector('.app-table-tools__sizer')
+    return {
+      open: !sizer.hidden,
+      // Opens on the table as it stands, and always with room to grow past it.
+      marked: sizer.querySelectorAll('.app-table-tools__cell.is-inside').length === 6,
+      label: sizer.querySelector('.app-table-tools__size').textContent === '2 × 3',
+      reaches: Boolean(sizer.querySelector('[data-row="4"][data-column="4"]')),
+    }
+  })
+  await page.click('.app-table-tools__cell[data-row="4"][data-column="4"]')
+  await page.waitForTimeout(200)
+  record('the size picker resizes in place', {
+    ...picker,
+    ...(await settled(page, () => {
+      const lines = window.__kiwidown.getMarkdown().split('\n')
+      return {
+        rows: document.querySelectorAll('#write table tr').length === 4,
+        columns: document.querySelectorAll('#write table tr:first-child > *').length === 4,
+        // Grown from the bottom right: the cells that were there are still where they were,
+        // and the alignment set above survived with its column.
+        kept: /^\|\s*a\s*\|\s*b\s*\|\s*c\s*\|/.test(lines[2] ?? '') && /:-+:/.test(lines[3] ?? ''),
+        closed: document.querySelector('.app-table-tools__sizer').hidden,
+      }
+    })),
+  })
+
+  await page.click('.app-table-tools [title="Delete table"]')
+  await page.waitForTimeout(200)
+  record(
+    'the toolbar deletes the table',
+    await settled(page, () => ({
+      gone: document.querySelectorAll('#write table').length === 0,
+      markdown: !window.__kiwidown.getMarkdown().includes('|'),
+      hidden: document.querySelector('.app-table-tools').hidden,
+      // The document is still an editable document, not a hole where a block used to be.
+      blocks: document.querySelectorAll('#write > p').length >= 2,
+    }))
+  )
+
   // --- the document tab ------------------------------------------------------------
   page.on('dialog', (dialog) => dialog.accept())
   await page.fill('.app-doc-name', 'my notes')
