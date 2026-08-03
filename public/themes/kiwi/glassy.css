@@ -183,7 +183,7 @@ body {
   border-bottom: 1px solid var(--lg-rim);
   /* Paper themes may pull the outer columns flush with the text; inside a pane they need
      the inset back, or the first character sits on the rim. */
-  padding: 0.6em 1em;
+  padding: 0.18em 1em;
 }
 
 #write table th {

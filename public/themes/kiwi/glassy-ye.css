@@ -91,23 +91,22 @@
   border-radius: 0;
 }
 
-/* Ye's manuscript density, with slightly more horizontal inset than paper needed: the fill
-   reaches the outer columns now, and flush glyphs would sit on its edge. */
+/* Keep Ye's compact manuscript rows while giving glyphs clear space from the glass grid. */
 #write table th,
 #write table td {
-  padding: 0.32em 0.7em;
+  padding: 0.18em 0.95em;
   border-right: 1px solid var(--kiwi-rule);
   border-bottom: 1px solid var(--kiwi-rule);
 }
 
 #write table th:first-child,
 #write table td:first-child {
-  padding-left: 0.7em;
+  padding-left: 0.95em;
 }
 
 #write table th:last-child,
 #write table td:last-child {
-  padding-right: 0.7em;
+  padding-right: 0.95em;
 }
 
 /* The header rule is the third of the three strokes, so it stays heavier than the grid and

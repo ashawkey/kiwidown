@@ -322,17 +322,23 @@ body {
   font-size: 0.97em;
 }
 
-/* Tighter leading than the prose: a cell is a phrase, and the body's 1.85 leaves rows
-   floating apart from the rules that are supposed to be holding them. */
+/* Compact leading and vertical inset keep full-width tables dense like a data grid, while
+   retaining enough horizontal padding to separate content from the internal rules. */
 #write table th,
 #write table td {
-  padding: 0.5em 0.85em;
+  padding: 0.18em 0.85em;
   border: 0;
   border-right: 1px solid var(--kiwi-rule);
   border-bottom: 1px solid var(--kiwi-rule);
-  line-height: 1.6;
+  line-height: 1.25;
   text-align: left;
   vertical-align: top;
+}
+
+/* ProseMirror wraps cell content in paragraphs; prose margins would make every row airy. */
+#write table th > p,
+#write table td > p {
+  margin: 0;
 }
 
 #write table th {
