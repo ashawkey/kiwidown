@@ -22,8 +22,8 @@
    *
    * So themes style `code` purely as *inline* code, and that lands on the <code> inside
    * our fence. The plain case is a `code { background-color; padding }` rule — a tinted,
-   * padded box painted around every single line of every code block. LaTeX's bare
-   * `code { font-family }` is the quiet one: it silently overrides the fence's own font.
+   * padded box painted around every single line of every code block. A bare
+   * `code { font-family }` is the quiet case: it silently overrides the fence's own font.
    *
    * Strip the inline-code decoration back off and let the fence's own styling — which
    * themes apply to .md-fences — come through untouched.

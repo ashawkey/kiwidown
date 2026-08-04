@@ -55,7 +55,7 @@ Milkdown renders fences as `<pre><code>`. Typora's fences contain no `<code>` at
 text lives in CodeMirror's elements. So themes style `code` purely as *inline* code, and
 that lands on the `<code>` inside our fence. A `code { background-color; padding }` rule is
 the plain case — a tinted, padded box painted around every line of every code block.
-LaTeX's bare `code { font-family }` is the quiet one: it silently overrides the fence's own
+A bare `code { font-family }` is the quiet case: it silently overrides the fence's own
 font.
 
 The theme is not wrong; it is styling markup that, in Typora, only ever appears inline.

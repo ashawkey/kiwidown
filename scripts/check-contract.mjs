@@ -34,7 +34,7 @@ const CHECKS = [
     selector: '#write > p',
     why: 'themes use direct-child selectors like `#write > h3.md-focus:before`',
   },
-  { what: 'headings', selector: '#write > h1.md-heading', why: 'latex hangs its heading numbering off .md-heading' },
+  { what: 'headings', selector: '#write > h1.md-heading', why: 'themes hang heading numbering off .md-heading' },
   { what: 'heading levels', selector: '#write h2.md-heading, #write h3.md-heading', min: 2 },
   { what: 'paragraphs', selector: '#write > p.md-end-block' },
   { what: 'blockquote', selector: '#write > blockquote.md-end-block' },
@@ -97,7 +97,7 @@ const CHECKS = [
   {
     what: 'footnote label',
     selector: '#write .md-def-footnote > span.md-def-name',
-    why: 'latex brackets it with .md-def-name:before/:after',
+    why: 'themes bracket it with .md-def-name:before/:after',
   },
   { what: 'footnote body', selector: '#write .md-def-footnote .md-def-content' },
   {

@@ -59,7 +59,7 @@ export function applyTyporaDom(ctx: Ctx): void {
   ctx.set(blockquoteAttr.key, () => ({ class: END_BLOCK }))
   ctx.set(hrAttr.key, () => ({ class: `${END_BLOCK} md-hr` }))
 
-  // .md-heading is what latex hangs its own heading numbering off.
+  // Themes hang their own heading numbering off .md-heading.
   ctx.set(headingAttr.key, () => ({ class: `${END_BLOCK} md-heading` }))
 
   // No vendored theme currently keys off either of these. They stay because Typora emits

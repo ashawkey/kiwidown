@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-03T14:39:01.188Z",
+  "generated": "2026-08-04T00:16:14.135Z",
   "packs": {
     "kiwi": {
       "fingerprint": "18903f58e10f5c6e",
@@ -12,10 +12,6 @@
     "lightmind": {
       "fingerprint": "669119d251716138",
       "files": 3
-    },
-    "latex": {
-      "fingerprint": "bf729ca40180517f",
-      "files": 4
     }
   },
   "themes": [
@@ -98,26 +94,6 @@
       "license": "MIT",
       "author": "Tsumugii24",
       "source": "https://github.com/Tsumugii24/claude-typora-theme"
-    },
-    {
-      "id": "latex/latex",
-      "name": "LaTeX",
-      "pack": "LaTeX",
-      "dark": false,
-      "href": "latex/target/latex.css",
-      "license": "GPL-3.0",
-      "author": "Keldos-Li",
-      "source": "https://github.com/Keldos-Li/typora-latex-theme"
-    },
-    {
-      "id": "latex/latex-dark",
-      "name": "LaTeX Dark",
-      "pack": "LaTeX",
-      "dark": true,
-      "href": "latex/target/latex-dark.css",
-      "license": "GPL-3.0",
-      "author": "Keldos-Li",
-      "source": "https://github.com/Keldos-Li/typora-latex-theme"
     },
     {
       "id": "lightmind/lightmind",

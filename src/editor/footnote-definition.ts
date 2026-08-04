@@ -25,7 +25,7 @@ import { footnoteDefinitionSchema } from '@milkdown/kit/preset/gfm'
  * is harmless here, where nothing else touches footnote_definition.
  *
  * Both label and body are <span>s, matching Typora, because the whole footnote is meant to
- * read as one line — latex brackets the label with `.md-def-name:before/:after` and
+ * read as one line — themes bracket the label with `.md-def-name:before/:after` and
  * expects the body to sit beside it, not under it. Milkdown's schema gives the body
  * `block+` content, so the paragraph inside it is re-flowed inline by src/theme/bridge.css.
  */

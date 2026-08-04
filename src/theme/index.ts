@@ -7,7 +7,7 @@ export interface ThemeEntry {
   name: string
   pack: string
   dark: boolean
-  /** Path under public/themes/, e.g. `latex/target/latex.css`. */
+  /** Path under public/themes/, e.g. `claude/claude.css`. */
   href: string
   license: string
   author: string

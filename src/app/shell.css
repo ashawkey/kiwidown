@@ -28,9 +28,10 @@
     /*
      * How wide the rendered document is.
      *
-     * Themes disagree wildly about this — 752px in Claude, 1100px in LightMind, a full
-     * 21cm sheet in LaTeX — so switching theme would otherwise rewrap every line. The measure is set here instead, above the theme, so the type and colour
-     * change but the column stays put.
+     * Themes disagree wildly about this — 752px in Claude, 1100px in LightMind, and full
+     * paper-sized layouts elsewhere — so switching theme would otherwise rewrap every
+     * line. The measure is set here instead, above the theme, so the type and colour change
+     * but the column stays put.
      *
      * A share of the window rather than a fixed width, because that is what the window
      * being wide is *for*; but never so narrow that a phone renders a column of two words

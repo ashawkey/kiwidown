@@ -7,8 +7,7 @@
     "themes work untouched: their relative @import and url() references still resolve.",
     "",
     "A pack is fetched either from a GitHub repo ('repo' + 'ref') or from a zip ('zip').",
-    "Some themes only ship as archives — here the LaTeX theme, whose repository holds",
-    "SCSS sources and builds CSS only into releases.",
+    "Archive support is available for themes whose repositories do not contain built CSS.",
     "",
     "'files' entries ending in '*' are globbed. 'skip' drops paths a glob would otherwise",
     "pull in; @font-face rules pointing at skipped assets are removed automatically, since",
@@ -67,19 +66,6 @@
       "themes": [
         { "slug": "lightmind", "name": "LightMind", "css": "lightmind.css", "dark": false },
         { "slug": "lightmind-dark", "name": "LightMind Dark", "css": "lightmind-dark.css", "dark": true }
-      ]
-    },
-    {
-      "slug": "latex",
-      "name": "LaTeX",
-      "zip": "https://github.com/Keldos-Li/typora-latex-theme/releases/download/v0.3.3/latex-theme-windows.zip",
-      "source": "https://github.com/Keldos-Li/typora-latex-theme",
-      "license": "GPL-3.0",
-      "author": "Keldos-Li",
-      "files": ["target/latex.css", "target/latex-dark.css", "LICENSE", "credits.md"],
-      "themes": [
-        { "slug": "latex", "name": "LaTeX", "css": "target/latex.css", "dark": false },
-        { "slug": "latex-dark", "name": "LaTeX Dark", "css": "target/latex-dark.css", "dark": true }
       ]
     }
   ]

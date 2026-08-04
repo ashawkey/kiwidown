@@ -29,14 +29,6 @@ HTML as a font.
 |---|---|---|---|
 | Claude | 2 | MIT | [Tsumugii24/claude-typora-theme](https://github.com/Tsumugii24/claude-typora-theme) |
 | LightMind | 2 | MIT | [SunMoonTrain/LightMindTheme](https://github.com/SunMoonTrain/LightMindTheme) |
-| LaTeX | 2 | **GPL-3.0** | [Keldos-Li/typora-latex-theme](https://github.com/Keldos-Li/typora-latex-theme) |
-
-### The one that constrains redistribution
-
-**LaTeX — GPL-3.0.** Themes are swappable data files: nothing links to them and no code
-derives from them, so this reads as aggregation under GPL §5 rather than a combined work,
-and it does not reach Kiwidown's MIT source. The vendored copies are modified (the rule
-stripping above), so those copies remain GPL-3.0 and carry the licence.
 
 ### Deliberately not vendored
 

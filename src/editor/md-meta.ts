@@ -19,7 +19,7 @@ import type { EditorState, Transaction } from '@milkdown/kit/prose/state'
  *
  * The spans carry `md-expand` alongside `md-meta` because `.md-meta` alone is
  * `display: none` — see the transcribed Typora rules in src/theme/compat.css. Themes then
- * colour them through `--md-char-color`, which only latex-dark sets; the rest inherit the
+ * colour them through `--md-char-color`; themes that do not set it inherit the
  * neutral grey compat.css falls back to.
  */
 

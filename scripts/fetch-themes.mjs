@@ -132,10 +132,9 @@ async function download(repo, ref, path, attempts = 8) {
 /**
  * Fetch and unpack a zip pack.
  *
- * Some themes are only published as archives — the LaTeX theme is the one vendored here,
- * and its repository holds SCSS sources and builds CSS only into releases. The archive's
- * internal layout is preserved for the same reason a repo's is: the stylesheets reference
- * their fonts relatively.
+ * Some themes are only published as archives because their repositories contain sources
+ * but no built CSS. The archive's internal layout is preserved for the same reason a
+ * repo's is: the stylesheets reference their fonts relatively.
  *
  * Returns a path → bytes map, minus the debris macOS leaves in zips.
  */
@@ -397,7 +396,7 @@ async function main() {
 
   // Built-in packs first, then the vendored ones alphabetically. The picker groups by pack
   // in index order, and the theme the editor opens with should head the list rather than be
-  // filed under K between Claude and LaTeX.
+  // filed alphabetically among the third-party packs.
   const builtin = new Set(manifest.packs.filter((p) => p.local).map((p) => p.name))
   const rank = (t) => (builtin.has(t.pack) ? 0 : 1)
   index.sort((a, b) => {
